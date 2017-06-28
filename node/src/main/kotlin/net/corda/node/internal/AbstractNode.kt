@@ -100,6 +100,7 @@ import net.corda.core.crypto.generateKeyPair as cryptoGenerateKeyPair
 abstract class AbstractNode(open val configuration: NodeConfiguration,
                             val advertisedServices: Set<ServiceInfo>,
                             val platformClock: Clock,
+                            val loadNetworkCacheDB: Boolean = false, // TODO move it configuration.loadNetworkCacheDB
                             @VisibleForTesting val busyNodeLatch: ReusableLatch = ReusableLatch()) : SingletonSerializeAsToken() {
 
     // TODO: Persist this, as well as whether the node is registered.
@@ -459,7 +460,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         val storageServices = initialiseStorageService(configuration.baseDirectory)
         storage = storageServices.first
         checkpointStorage = storageServices.second
-        netMapCache = InMemoryNetworkMapCache()
+        netMapCache = InMemoryNetworkMapCache(loadNetworkCacheDB)
         network = makeMessagingService()
         schemas = makeSchemaService()
         vault = makeVaultService(configuration.dataSourceProperties)
