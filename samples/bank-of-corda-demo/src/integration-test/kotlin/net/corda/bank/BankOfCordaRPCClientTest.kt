@@ -39,8 +39,7 @@ class BankOfCordaRPCClientTest {
             val vaultUpdatesBigCorp = bigCorpProxy.vaultAndUpdates().second
 
             // Kick-off actual Issuer Flow
-            // TODO: Update checks below to reflect states consumed/produced under anonymisation
-            val anonymous = false
+            val anonymous = true
             bocProxy.startFlow(
                     ::IssuanceRequester,
                     1000.DOLLARS,
