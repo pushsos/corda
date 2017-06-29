@@ -72,12 +72,12 @@ class IssuerFlowTest {
                         expect { update ->
                             require(update.consumed.isEmpty()) { "Expected 0 consumed states, actual: $update" }
                             require(update.produced.size == 1) { "Expected 1 produced states, actual: $update" }
-                        },
+                        }
                         // MOVE
-                        expect { update ->
+                        /* expect { update ->
                             require(update.consumed.size == 1) { "Expected 1 consumed states, actual: $update" }
                             require(update.produced.isEmpty()) { "Expected 0 produced states, actual: $update" }
-                        }
+                        } */
                 )
             }
 
