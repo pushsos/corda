@@ -56,14 +56,21 @@ import kotlin.concurrent.withLock
  * TODO: have transaction storage do some caching.
  */
 class NodeVaultService(private val services: ServiceHub, dataSourceProperties: Properties) : SingletonSerializeAsToken(), VaultService {
-    internal companion object {
-        val log = loggerFor<NodeVaultService>()
+    companion object {
+        private val log = loggerFor<NodeVaultService>()
 
         @VisibleForTesting
-        internal fun isRelevant(state: ContractState, ourKeys: Set<PublicKey>) = when (state) {
+        fun isRelevant(state: ContractState, ourKeys: Set<PublicKey>) = when (state) {
             is OwnableState -> state.owner.owningKey.containsAny(ourKeys)
             is LinearState -> state.isRelevant(ourKeys)
             else -> ourKeys.intersect(state.participants.map { it.owningKey }).isNotEmpty()
+        }
+
+        @VisibleForTesting
+        fun ourStates(tx: WireTransaction, ourKeys: Set<PublicKey>): List<StateAndRef<ContractState>> {
+            return tx.outputs.
+                    filter { isRelevant(it.data, ourKeys) }.
+                    map { tx.outRef<ContractState>(it.data) }
         }
 
         // Define composite primary key used in Requery Expression
@@ -469,9 +476,7 @@ class NodeVaultService(private val services: ServiceHub, dataSourceProperties: P
             = txState.copy(data = txState.data.copy(amount = amount, owner = owner))
 
     private fun makeUpdate(tx: WireTransaction, ourKeys: Set<PublicKey>): Vault.Update {
-        val ourNewStates = tx.outputs.
-                filter { isRelevant(it.data, ourKeys) }.
-                map { tx.outRef<ContractState>(it.data) }
+        val ourNewStates = ourStates(tx, ourKeys)
 
         // Retrieve all unconsumed states for this transaction's inputs
         val consumedStates = HashSet<StateAndRef<ContractState>>()
