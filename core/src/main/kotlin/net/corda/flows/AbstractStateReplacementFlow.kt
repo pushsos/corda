@@ -111,7 +111,9 @@ abstract class AbstractStateReplacementFlow {
         @Suspendable
         private fun getParticipantSignature(party: Party, stx: SignedTransaction): DigitalSignature.WithKey {
             val proposal = Proposal(originalState.ref, modification, stx)
-            val response = sendAndReceive<DigitalSignature.WithKey>(party, proposal)
+            send(party, proposal)
+            subFlow(SendTransactionFlow(party))
+            val response = receive<DigitalSignature.WithKey>(party)
             return response.unwrap {
                 check(party.owningKey.isFulfilledBy(it.by)) { "Not signed by the required participant" }
                 it.verify(stx.id)

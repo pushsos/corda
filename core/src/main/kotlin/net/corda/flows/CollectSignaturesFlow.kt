@@ -62,7 +62,7 @@ import java.security.PublicKey
 // TODO: AbstractStateReplacementFlow needs updating to use this flow.
 // TODO: Update this flow to handle randomly generated keys when that works is complete.
 class CollectSignaturesFlow(val partiallySignedTx: SignedTransaction,
-                            override val progressTracker: ProgressTracker = tracker()): FlowLogic<SignedTransaction>() {
+                            override val progressTracker: ProgressTracker = tracker()) : FlowLogic<SignedTransaction>() {
 
     companion object {
         object COLLECTING : ProgressTracker.Step("Collecting signatures from counter-parties.")
@@ -108,7 +108,6 @@ class CollectSignaturesFlow(val partiallySignedTx: SignedTransaction,
         // Verify all but the notary's signature if the transaction requires a notary, otherwise verify all signatures.
         progressTracker.currentStep = VERIFYING
         if (notaryKey != null) stx.verifySignatures(notaryKey) else stx.verifySignatures()
-
         return stx
     }
 
@@ -127,7 +126,9 @@ class CollectSignaturesFlow(val partiallySignedTx: SignedTransaction,
      * Get and check the required signature.
      */
     @Suspendable private fun collectSignature(counterparty: Party): DigitalSignature.WithKey {
-        return sendAndReceive<DigitalSignature.WithKey>(counterparty, partiallySignedTx).unwrap {
+        send(counterparty, partiallySignedTx)
+        subFlow(SendTransactionFlow(counterparty))
+        return receive<DigitalSignature.WithKey>(counterparty).unwrap {
             require(counterparty.owningKey.isFulfilledBy(it.by)) { "Not signed by the required Party." }
             it
         }

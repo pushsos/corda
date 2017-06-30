@@ -34,7 +34,6 @@ class ResolveTransactionsFlow(private val txHashes: Set<SecureHash>,
 
     companion object {
         private fun dependencyIDs(wtx: WireTransaction) = wtx.inputs.map { it.txhash }.toSet()
-
         /**
          * Topologically sorts the given transactions such that dependencies are listed before dependers. */
         @JvmStatic
@@ -65,7 +64,6 @@ class ResolveTransactionsFlow(private val txHashes: Set<SecureHash>,
             require(result.size == transactions.size)
             return result
         }
-
     }
 
     @CordaSerializable
@@ -113,7 +111,6 @@ class ResolveTransactionsFlow(private val txHashes: Set<SecureHash>,
             serviceHub.recordTransactions(stx)
             result += ltx
         }
-
         // If this flow is resolving a specific transaction, make sure we have its attachments and then verify
         // it as well, but don't insert to the database. Note that when we were given a SignedTransaction (stx != null)
         // we *could* insert, because successful verification implies we have everything we need here, and it might
@@ -127,7 +124,7 @@ class ResolveTransactionsFlow(private val txHashes: Set<SecureHash>,
             ltx.verify()
             result += ltx
         }
-
+        send(otherSide, FetchDataFlow.EndRequest())
         return result
     }
 
@@ -181,7 +178,6 @@ class ResolveTransactionsFlow(private val txHashes: Set<SecureHash>,
             if (limitCounter > limit)
                 throw ExcessivelyLargeTransactionGraph()
         }
-
         return resultQ.values
     }
 

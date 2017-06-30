@@ -12,6 +12,8 @@ import net.corda.core.messaging.SingleMessageRecipient
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.utilities.unwrap
 import net.corda.flows.FetchAttachmentsFlow
+import net.corda.flows.FetchDataFlow
+import net.corda.flows.SendTransactionFlow
 import net.corda.node.internal.InitiatedFlowFactory
 import net.corda.node.services.config.NodeConfiguration
 import net.corda.node.services.network.NetworkMapService
@@ -82,9 +84,10 @@ class AttachmentSerializationTest {
         mockNet.stopNodes()
     }
 
-    private class ServerLogic(private val client: Party) : FlowLogic<Unit>() {
+    private class ServerLogic(private val client: Party, private val sendData: Boolean) : FlowLogic<Unit>() {
         @Suspendable
         override fun call() {
+            if (sendData) subFlow(SendTransactionFlow(client))
             receive<String>(client).unwrap { assertEquals("ping one", it) }
             sendAndReceive<String>(client, "pong").unwrap { assertEquals("ping two", it) }
         }
@@ -135,15 +138,16 @@ class AttachmentSerializationTest {
         @Suspendable
         override fun getAttachmentContent(): String {
             val (downloadedAttachment) = subFlow(FetchAttachmentsFlow(setOf(attachmentId), server)).downloaded
+            send(server, FetchDataFlow.EndRequest())
             communicate()
             return downloadedAttachment.extractContent()
         }
     }
 
-    private fun launchFlow(clientLogic: ClientLogic, rounds: Int) {
+    private fun launchFlow(clientLogic: ClientLogic, rounds: Int, sendData: Boolean = false) {
         server.internalRegisterFlowFactory(ClientLogic::class.java, object : InitiatedFlowFactory<ServerLogic> {
             override fun createFlow(platformVersion: Int, otherParty: Party, sessionInit: SessionInit): ServerLogic {
-                return ServerLogic(otherParty)
+                return ServerLogic(otherParty, sendData)
             }
         }, ServerLogic::class.java, track = false)
         client.services.startFlow(clientLogic)
@@ -192,7 +196,7 @@ class AttachmentSerializationTest {
     @Test
     fun `only the hash of a FetchAttachmentsFlow attachment should be saved in checkpoint`() {
         val attachmentId = server.saveAttachment("genuine")
-        launchFlow(FetchAttachmentLogic(server, attachmentId), 2)
+        launchFlow(FetchAttachmentLogic(server, attachmentId), 2, sendData = true)
         client.hackAttachment(attachmentId, "hacked")
         assertEquals("hacked", rebootClientAndGetAttachmentContent(false))
     }

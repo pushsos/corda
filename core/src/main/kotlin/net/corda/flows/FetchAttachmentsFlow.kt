@@ -4,8 +4,8 @@ import net.corda.core.contracts.AbstractAttachment
 import net.corda.core.contracts.Attachment
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.sha256
-import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.Party
+import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.SerializationToken
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.serialization.SerializeAsTokenContext
@@ -14,9 +14,11 @@ import net.corda.core.serialization.SerializeAsTokenContext
  * Given a set of hashes either loads from from local storage  or requests them from the other peer. Downloaded
  * attachments are saved to local storage automatically.
  */
-@InitiatingFlow
-class FetchAttachmentsFlow(requests: Set<SecureHash>,
-                           otherSide: Party) : FetchDataFlow<Attachment, ByteArray>(requests, otherSide) {
+class FetchAttachmentsFlow(requests: Set<SecureHash>, otherSide: Party) : FetchDataFlow<Attachment, ByteArray>(requests, otherSide) {
+    @CordaSerializable
+    data class Request(override val hashes: List<SecureHash>) : FetchDataFlow.Request
+
+    override fun createRequest(toFetch: List<SecureHash>) = Request(toFetch)
 
     override fun load(txid: SecureHash): Attachment? = serviceHub.attachments.openAttachment(txid)
 

@@ -79,7 +79,7 @@ object TwoPartyTradeFlow {
             // What we get back from the other side is a transaction that *might* be valid and acceptable to us,
             // but we must check it out thoroughly before we sign!
             send(otherParty, hello)
-
+            subFlow(SendTransactionFlow(otherParty))
             // Verify and sign the transaction.
             progressTracker.currentStep = VERIFYING_AND_SIGNING
             // DOCSTART 5
@@ -142,7 +142,6 @@ object TwoPartyTradeFlow {
             // it to the ledger by sending it to the notary.
             progressTracker.currentStep = COLLECTING_SIGNATURES
             val twiceSignedTx = subFlow(CollectSignaturesFlow(partSignedTx, COLLECTING_SIGNATURES.childProgressTracker()))
-
             // Notarise and record the transaction.
             progressTracker.currentStep = RECORDING
             return subFlow(FinalityFlow(twiceSignedTx, setOf(otherParty, serviceHub.myInfo.legalIdentity))).single()

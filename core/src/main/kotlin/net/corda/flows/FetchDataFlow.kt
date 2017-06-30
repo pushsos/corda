@@ -41,8 +41,12 @@ abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
 
     class HashNotFound(val requested: SecureHash) : FlowException()
 
+    interface Request {
+        val hashes: List<SecureHash>
+    }
+
     @CordaSerializable
-    data class Request(val hashes: List<SecureHash>)
+    class EndRequest(override val hashes: List<SecureHash> = emptyList()) : Request
 
     @CordaSerializable
     data class Result<out T : NamedByHash>(val fromDisk: List<T>, val downloaded: List<T>)
@@ -59,7 +63,7 @@ abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
             logger.trace("Requesting ${toFetch.size} dependency(s) for verification")
 
             // TODO: Support "large message" response streaming so response sizes are not limited by RAM.
-            val maybeItems = sendAndReceive<ArrayList<W>>(otherSide, Request(toFetch))
+            val maybeItems = sendAndReceive<ArrayList<W>>(otherSide, createRequest(toFetch))
             // Check for a buggy/malicious peer answering with something that we didn't ask for.
             val downloaded = validateFetchResponse(maybeItems, toFetch)
             maybeWriteToDisk(downloaded)
@@ -67,21 +71,15 @@ abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
         }
     }
 
+    abstract fun createRequest(toFetch: List<SecureHash>): Request
+
     protected open fun maybeWriteToDisk(downloaded: List<T>) {
         // Do nothing by default.
     }
 
     private fun loadWhatWeHave(): Pair<List<T>, List<SecureHash>> {
-        val fromDisk = ArrayList<T>()
-        val toFetch = ArrayList<SecureHash>()
-        for (txid in requests) {
-            val stx = load(txid)
-            if (stx == null)
-                toFetch += txid
-            else
-                fromDisk += stx
-        }
-        return Pair(fromDisk, toFetch)
+        val (fromDisk, toFetch) = requests.map { it to load(it) }.partition { it.second != null }
+        return Pair(fromDisk.mapNotNull { it.second }, toFetch.map { it.first })
     }
 
     protected abstract fun load(txid: SecureHash): T?
@@ -89,17 +87,14 @@ abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
     @Suppress("UNCHECKED_CAST")
     protected open fun convert(wire: W): T = wire as T
 
-    private fun validateFetchResponse(maybeItems: UntrustworthyData<ArrayList<W>>,
-                                      requests: List<SecureHash>): List<T> {
+    private fun validateFetchResponse(maybeItems: UntrustworthyData<ArrayList<W>>, requests: List<SecureHash>): List<T> {
         return maybeItems.unwrap { response ->
-            if (response.size != requests.size)
-                throw DownloadedVsRequestedSizeMismatch(requests.size, response.size)
+            if (response.size != requests.size) throw DownloadedVsRequestedSizeMismatch(requests.size, response.size)
             val answers = response.map { convert(it) }
             // Check transactions actually hash to what we requested, if this fails the remote node
             // is a malicious flow violator or buggy.
             for ((index, item) in answers.withIndex()) {
-                if (item.id != requests[index])
-                    throw DownloadedVsRequestedDataMismatch(requests[index], item.id)
+                if (item.id != requests[index]) throw DownloadedVsRequestedDataMismatch(requests[index], item.id)
             }
             answers
         }

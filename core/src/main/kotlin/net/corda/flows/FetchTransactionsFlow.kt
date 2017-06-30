@@ -1,8 +1,8 @@
 package net.corda.flows
 
 import net.corda.core.crypto.SecureHash
-import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.Party
+import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.SignedTransaction
 
 /**
@@ -13,9 +13,12 @@ import net.corda.core.transactions.SignedTransaction
  * results in a [FetchDataFlow.HashNotFound] exception. Note that returned transactions are not inserted into
  * the database, because it's up to the caller to actually verify the transactions are valid.
  */
-@InitiatingFlow
-class FetchTransactionsFlow(requests: Set<SecureHash>, otherSide: Party) :
-        FetchDataFlow<SignedTransaction, SignedTransaction>(requests, otherSide) {
+class FetchTransactionsFlow(requests: Set<SecureHash>, otherSide: Party) : FetchDataFlow<SignedTransaction, SignedTransaction>(requests, otherSide) {
+
+    @CordaSerializable
+    data class Request(override val hashes: List<SecureHash>) : FetchDataFlow.Request
+
+    override fun createRequest(toFetch: List<SecureHash>) = Request(toFetch)
 
     override fun load(txid: SecureHash): SignedTransaction? = serviceHub.validatedTransactions.getTransaction(txid)
 }

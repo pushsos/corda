@@ -26,7 +26,7 @@ import net.corda.flows.*
  *
  * Additionally, because nodes do not store invalid transactions, requesting such a transaction will always yield null.
  */
-class FetchTransactionsHandler(otherParty: Party) : FetchDataHandler<SignedTransaction>(otherParty) {
+/*class FetchTransactionsHandler(otherParty: Party) : FetchDataHandler<SignedTransaction>(otherParty) {
     override fun getData(id: SecureHash): SignedTransaction? {
         return serviceHub.validatedTransactions.getTransaction(id)
     }
@@ -54,7 +54,7 @@ abstract class FetchDataHandler<out T>(val otherParty: Party) : FlowLogic<Unit>(
     }
 
     protected abstract fun getData(id: SecureHash): T?
-}
+}*/
 
 // TODO: We should have a whitelist of contracts we're willing to accept at all, and reject if the transaction
 //       includes us in any outside that list. Potentially just if it includes any outside that list at all.
@@ -108,7 +108,7 @@ class ContractUpgradeHandler(otherSide: Party) : AbstractStateReplacementFlow.Ac
     override fun verifyProposal(proposal: AbstractStateReplacementFlow.Proposal<Class<out UpgradedContract<ContractState, *>>>) {
         // Retrieve signed transaction from our side, we will apply the upgrade logic to the transaction on our side, and
         // verify outputs matches the proposed upgrade.
-        val stx = subFlow(FetchTransactionsFlow(setOf(proposal.stateRef.txhash), otherSide)).fromDisk.singleOrNull()
+        val stx = serviceHub.validatedTransactions.getTransaction(proposal.stateRef.txhash)
         requireNotNull(stx) { "We don't have a copy of the referenced state" }
         val oldStateAndRef = stx!!.tx.outRef<ContractState>(proposal.stateRef.index)
         val authorisedUpgrade = serviceHub.vaultService.getAuthorisedContractUpgrade(oldStateAndRef.ref) ?:
