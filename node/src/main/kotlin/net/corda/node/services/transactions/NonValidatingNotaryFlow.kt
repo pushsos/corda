@@ -5,6 +5,7 @@ import net.corda.core.identity.Party
 import net.corda.core.node.services.TrustedAuthorityNotaryService
 import net.corda.core.transactions.FilteredTransaction
 import net.corda.core.utilities.unwrap
+import net.corda.flows.EndDataRequest
 import net.corda.flows.NotaryFlow
 import net.corda.flows.TransactionParts
 
@@ -23,6 +24,7 @@ class NonValidatingNotaryFlow(otherSide: Party, service: TrustedAuthorityNotaryS
             it.verify()
             it
         }
+        send(otherSide, EndDataRequest())
         return TransactionParts(ftx.rootHash, ftx.filteredLeaves.inputs, ftx.filteredLeaves.timeWindow)
     }
 }

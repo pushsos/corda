@@ -28,8 +28,7 @@ class BroadcastTransactionFlow(val notarisedTransaction: SignedTransaction,
         val msg = NotifyTxRequest(notarisedTransaction)
         participants.filter { it != serviceHub.myInfo.legalIdentity }.forEach { participant ->
             // This pops out the other side in NotifyTransactionHandler
-            send(participant, msg)
-            subFlow(SendTransactionFlow(participant))
+            sendWithDataVending(participant, msg)
         }
     }
 }

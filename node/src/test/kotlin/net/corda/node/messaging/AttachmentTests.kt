@@ -13,7 +13,8 @@ import net.corda.core.messaging.SingleMessageRecipient
 import net.corda.core.node.services.ServiceInfo
 import net.corda.flows.FetchAttachmentsFlow
 import net.corda.flows.FetchDataFlow
-import net.corda.flows.SendTransactionFlow
+import net.corda.flows.sendWithDataVending
+import net.corda.flows.startDataVending
 import net.corda.node.services.config.NodeConfiguration
 import net.corda.node.services.database.RequeryConfiguration
 import net.corda.node.services.network.NetworkMapService
@@ -67,8 +68,8 @@ class AttachmentTests {
     @Test
     fun `download and store`() {
         val (n0, n1) = mockNet.createTwoNodes()
-        n0.registerInitiatedFlow(Response::class.java)
-        n1.registerInitiatedFlow(Response::class.java)
+        n0.registerInitiatedFlow(TestResponse::class.java)
+        n1.registerInitiatedFlow(TestResponse::class.java)
 
         // Insert an attachment into node zero's store directly.
         val id = n0.database.transaction {
@@ -98,8 +99,8 @@ class AttachmentTests {
     @Test
     fun `missing`() {
         val (n0, n1) = mockNet.createTwoNodes()
-        n0.registerInitiatedFlow(Response::class.java)
-        n1.registerInitiatedFlow(Response::class.java)
+        n0.registerInitiatedFlow(TestResponse::class.java)
+        n1.registerInitiatedFlow(TestResponse::class.java)
 
         // Get node one to fetch a non-existent attachment.
         val hash = SecureHash.randomSHA256()
@@ -129,8 +130,8 @@ class AttachmentTests {
         }, true, null, null, ServiceInfo(NetworkMapService.type), ServiceInfo(SimpleNotaryService.type))
         val n1 = mockNet.createNode(n0.network.myAddress)
 
-        n0.registerInitiatedFlow(Response::class.java)
-        n1.registerInitiatedFlow(Response::class.java)
+        n0.registerInitiatedFlow(TestResponse::class.java)
+        n1.registerInitiatedFlow(TestResponse::class.java)
 
         val attachment = fakeAttachment()
         // Insert an attachment into node zero's store directly.
@@ -165,9 +166,11 @@ class AttachmentTests {
     }
 
     @InitiatedBy(InitiatingWrapper::class)
-    private class Response(val otherSide: Party) : FlowLogic<Unit>() {
+    private class TestResponse(val otherSide: Party) : FlowLogic<Unit>() {
         @Suspendable
-        override fun call() = subFlow(SendTransactionFlow(otherSide))
+        override fun call() {
+            startDataVending(otherSide)
+        }
     }
 
     private fun <T> FlowLogic<T>.initiating() = InitiatingWrapper(this)

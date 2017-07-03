@@ -21,7 +21,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.unwrap
 import net.corda.flows.FinalityFlow
 import net.corda.flows.ResolveTransactionsFlow
-import net.corda.flows.SendTransactionFlow
+import net.corda.flows.sendAndReceiveWithDataVending
 import java.util.*
 
 @CordaSerializable
@@ -161,9 +161,7 @@ class ForeignExchangeFlow(val tradeId: String,
         val signedTransaction = buildTradeProposal(ourStates, theirStates)
 
         // pass transaction details to the counterparty to revalidate and confirm with a signature
-        send(remoteRequestWithNotary.owner, signedTransaction)
-        subFlow(SendTransactionFlow(remoteRequestWithNotary.owner))
-        val allPartySignedTx = receive<DigitalSignature.WithKey>(remoteRequestWithNotary.owner).unwrap {
+        val allPartySignedTx = sendAndReceiveWithDataVending<DigitalSignature.WithKey>(remoteRequestWithNotary.owner, signedTransaction).unwrap {
             val withNewSignature = signedTransaction + it
             // check all signatures are present except the notary
             withNewSignature.verifySignatures(withNewSignature.tx.notary!!.owningKey)
@@ -238,9 +236,7 @@ class ForeignExchangeRemoteFlow(val source: Party) : FlowLogic<Unit>() {
 
         // Send back our proposed states and await the full transaction to verify
         val ourKey = serviceHub.keyManagementService.filterMyKeys(ourResponse.inputs.flatMap { it.state.data.participants }.map { it.owningKey }).single()
-        send(source, ourResponse)
-        subFlow(SendTransactionFlow(source))
-        val proposedTrade = receive<SignedTransaction>(source).unwrap {
+        val proposedTrade = sendAndReceiveWithDataVending<SignedTransaction>(source, ourResponse).unwrap {
             val wtx = it.tx
             // check all signatures are present except our own and the notary
             it.verifySignatures(ourKey, wtx.notary!!.owningKey)

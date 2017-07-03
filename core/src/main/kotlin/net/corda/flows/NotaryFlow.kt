@@ -11,7 +11,9 @@ import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.Party
-import net.corda.core.node.services.*
+import net.corda.core.node.services.NotaryService
+import net.corda.core.node.services.TrustedAuthorityNotaryService
+import net.corda.core.node.services.UniquenessProvider
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.ProgressTracker
@@ -65,9 +67,7 @@ object NotaryFlow {
             }
 
             val response = try {
-                send(notaryParty, payload)
-                if (serviceHub.networkMapCache.isValidatingNotary(notaryParty)) subFlow(SendTransactionFlow(notaryParty))
-                receive<List<DigitalSignature.WithKey>>(notaryParty)
+                sendAndReceiveWithDataVending<List<DigitalSignature.WithKey>>(notaryParty, payload)
             } catch (e: NotaryException) {
                 if (e.error is NotaryError.Conflict) {
                     e.error.conflict.verified()

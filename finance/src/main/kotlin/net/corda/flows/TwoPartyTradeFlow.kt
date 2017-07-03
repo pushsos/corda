@@ -78,8 +78,7 @@ object TwoPartyTradeFlow {
             val hello = SellerTradeInfo(assetToSell, price, myKey)
             // What we get back from the other side is a transaction that *might* be valid and acceptable to us,
             // but we must check it out thoroughly before we sign!
-            send(otherParty, hello)
-            subFlow(SendTransactionFlow(otherParty))
+            sendWithDataVending(otherParty, hello)
             // Verify and sign the transaction.
             progressTracker.currentStep = VERIFYING_AND_SIGNING
             // DOCSTART 5

@@ -13,8 +13,8 @@ import net.corda.core.node.services.ServiceInfo
 import net.corda.core.utilities.unwrap
 import net.corda.flows.EndDataRequest
 import net.corda.flows.FetchAttachmentsFlow
-import net.corda.flows.FetchDataFlow
-import net.corda.flows.SendTransactionFlow
+import net.corda.flows.receiveWithDataVending
+import net.corda.flows.sendAndReceiveWithDataVending
 import net.corda.node.internal.InitiatedFlowFactory
 import net.corda.node.services.config.NodeConfiguration
 import net.corda.node.services.network.NetworkMapService
@@ -48,6 +48,7 @@ private fun Attachment.extractContent() = ByteArrayOutputStream().apply { extrac
 private fun MockNetwork.MockNode.saveAttachment(content: String) = database.transaction {
     attachments.importAttachment(createAttachmentData(content).inputStream())
 }
+
 private fun MockNetwork.MockNode.hackAttachment(attachmentId: SecureHash, content: String) = database.transaction {
     attachments.updateAttachment(attachmentId, createAttachmentData(content))
 }
@@ -88,8 +89,11 @@ class AttachmentSerializationTest {
     private class ServerLogic(private val client: Party, private val sendData: Boolean) : FlowLogic<Unit>() {
         @Suspendable
         override fun call() {
-            if (sendData) subFlow(SendTransactionFlow(client))
-            receive<String>(client).unwrap { assertEquals("ping one", it) }
+            if (sendData) {
+                receiveWithDataVending<String>(client)
+            } else {
+                receive<String>(client)
+            }.unwrap { assertEquals("ping one", it) }
             sendAndReceive<String>(client, "pong").unwrap { assertEquals("ping two", it) }
         }
     }
