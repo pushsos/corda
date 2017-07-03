@@ -15,15 +15,9 @@ import net.corda.core.serialization.SerializeAsTokenContext
  * attachments are saved to local storage automatically.
  */
 class FetchAttachmentsFlow(requests: Set<SecureHash>, otherSide: Party) : FetchDataFlow<Attachment, ByteArray>(requests, otherSide) {
-    @CordaSerializable
-    data class Request(override val hashes: List<SecureHash>) : FetchDataFlow.Request
-
-    override fun createRequest(toFetch: List<SecureHash>) = Request(toFetch)
-
+    override fun createRequest(toFetch: List<SecureHash>) = FetchAttachmentsRequest(toFetch)
     override fun load(txid: SecureHash): Attachment? = serviceHub.attachments.openAttachment(txid)
-
     override fun convert(wire: ByteArray): Attachment = FetchedAttachment({ wire })
-
     override fun maybeWriteToDisk(downloaded: List<Attachment>) {
         for (attachment in downloaded) {
             serviceHub.attachments.importAttachment(attachment.open())
@@ -40,3 +34,6 @@ class FetchAttachmentsFlow(requests: Set<SecureHash>, otherSide: Party) : FetchD
         override fun toToken(context: SerializeAsTokenContext) = Token(id)
     }
 }
+
+@CordaSerializable
+data class FetchAttachmentsRequest(override val hashes: List<SecureHash>) : FetchDataFlow.Request

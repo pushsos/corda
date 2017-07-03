@@ -11,6 +11,7 @@ import net.corda.core.messaging.RPCOps
 import net.corda.core.messaging.SingleMessageRecipient
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.utilities.unwrap
+import net.corda.flows.EndDataRequest
 import net.corda.flows.FetchAttachmentsFlow
 import net.corda.flows.FetchDataFlow
 import net.corda.flows.SendTransactionFlow
@@ -138,7 +139,7 @@ class AttachmentSerializationTest {
         @Suspendable
         override fun getAttachmentContent(): String {
             val (downloadedAttachment) = subFlow(FetchAttachmentsFlow(setOf(attachmentId), server)).downloaded
-            send(server, FetchDataFlow.EndRequest())
+            send(server, EndDataRequest())
             communicate()
             return downloadedAttachment.extractContent()
         }

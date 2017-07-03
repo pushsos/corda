@@ -41,13 +41,10 @@ abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
 
     class HashNotFound(val requested: SecureHash) : FlowException()
 
+    @CordaSerializable
     interface Request {
         val hashes: List<SecureHash>
     }
-
-    @CordaSerializable
-    class EndRequest(override val hashes: List<SecureHash> = emptyList()) : Request
-
     @CordaSerializable
     data class Result<out T : NamedByHash>(val fromDisk: List<T>, val downloaded: List<T>)
 
@@ -100,3 +97,5 @@ abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
         }
     }
 }
+
+class EndDataRequest(override val hashes: List<SecureHash> = emptyList()) : FetchDataFlow.Request

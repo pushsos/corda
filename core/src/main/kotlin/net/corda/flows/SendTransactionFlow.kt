@@ -12,16 +12,17 @@ class SendTransactionFlow(private val otherSide: Party,
                           private val attachmentAccessControl: (SecureHash) -> Boolean = { true }) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        // Expect fetch data request until received a end message.
+        // Expect fetch data request until received a end request.
         while (true) {
             val request = receive<FetchDataFlow.Request>(otherSide).unwrap {
-                // TODO: validate party?
+                if (it.hashes.isEmpty()) throw FlowException("Empty hash list")
+                // TODO: Check requested hash is relevant to the flow?
                 it
             }
             val response = when (request) {
-                is FetchTransactionsFlow.Request -> request.hashes.filter(transactionAccessControl).map { serviceHub.validatedTransactions.getTransaction(it) ?: throw FetchDataFlow.HashNotFound(it) }
-                is FetchAttachmentsFlow.Request -> request.hashes.filter(attachmentAccessControl).map { serviceHub.attachments.openAttachment(it)?.open()?.readBytes() ?: throw FetchDataFlow.HashNotFound(it) }
-                is FetchDataFlow.EndRequest -> return
+                is FetchTransactionsRequest -> request.hashes.filter(transactionAccessControl).map { serviceHub.validatedTransactions.getTransaction(it) ?: throw FetchDataFlow.HashNotFound(it) }
+                is FetchAttachmentsRequest -> request.hashes.filter(attachmentAccessControl).map { serviceHub.attachments.openAttachment(it)?.open()?.readBytes() ?: throw FetchDataFlow.HashNotFound(it) }
+                is EndDataRequest -> return
                 else -> throw FlowException("Unsupported Fetch Data Request : ${request.javaClass}")
             }
             send(otherSide, response)
