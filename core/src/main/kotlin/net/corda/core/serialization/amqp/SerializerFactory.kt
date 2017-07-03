@@ -40,6 +40,7 @@ import javax.annotation.concurrent.ThreadSafe
 // TODO: generic types should define restricted type alias with source of the wildcarded version, I think, if we're to generate classes from schema
 // TODO: need to rethink matching of constructor to properties in relation to implementing interfaces and needing those properties etc.
 // TODO: need to support super classes as well as interfaces with our current code base... what's involved?  If we continue to ban, what is the impact?
+// TODO: carpenter must respect the amqp mndatory field, if not mandatory should create nullable types
 @ThreadSafe
 class SerializerFactory(val whitelist: ClassWhitelist = AllWhitelist) {
     private val serializersByType = ConcurrentHashMap<Type, AMQPSerializer<Any>>()
