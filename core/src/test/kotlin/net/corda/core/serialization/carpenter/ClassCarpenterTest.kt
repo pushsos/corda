@@ -1,4 +1,4 @@
-package net.corda.carpenter
+package net.corda.core.serialization.carpenter
 
 import org.junit.Test
 import java.lang.reflect.Field

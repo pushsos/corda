@@ -1,11 +1,8 @@
-package net.corda.carpenter
+package net.corda.core.serialization.carpenter
 
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes.*
-import net.corda.core.serialization.carpenter.Schema
-import net.corda.core.serialization.carpenter.ClassSchema
-import net.corda.core.serialization.carpenter.InterfaceSchema
 import java.lang.Character.*
 import java.util.*
 
@@ -121,8 +118,8 @@ class ClassCarpenter {
         return _loaded[schema.name]!!
     }
 
-    private fun generateInterface(schema: Schema): Class<*> {
-        return generate(schema) { cw, schema ->
+    private fun generateInterface(interfaceSchema: Schema): Class<*> {
+        return generate(interfaceSchema) { cw, schema ->
             val interfaces = schema.interfaces.map { it.name.jvm }.toTypedArray()
 
             with(cw) {
@@ -135,8 +132,8 @@ class ClassCarpenter {
         }
     }
 
-    private fun generateClass(schema: Schema): Class<*> {
-        return generate(schema) { cw, schema ->
+    private fun generateClass(classSchema: Schema): Class<*> {
+        return generate(classSchema) { cw, schema ->
             val superName = schema.superclass?.jvmName ?: "java/lang/Object"
             val interfaces = arrayOf(SimpleFieldAccess::class.java.name.jvm) + schema.interfaces.map { it.name.jvm }
 
