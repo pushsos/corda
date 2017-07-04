@@ -45,6 +45,7 @@ abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
     interface Request {
         val hashes: List<SecureHash>
     }
+
     @CordaSerializable
     data class Result<out T : NamedByHash>(val fromDisk: List<T>, val downloaded: List<T>)
 
@@ -75,8 +76,9 @@ abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
     }
 
     private fun loadWhatWeHave(): Pair<List<T>, List<SecureHash>> {
-        val (fromDisk, toFetch) = requests.map { it to load(it) }.partition { it.second != null }
-        return Pair(fromDisk.mapNotNull { it.second }, toFetch.map { it.first })
+        return requests.map { it to load(it) }
+                .partition { it.second != null }
+                .let { (fromDisk, toFetch) -> Pair(fromDisk.mapNotNull { it.second }, toFetch.map { it.first }) }
     }
 
     protected abstract fun load(txid: SecureHash): T?

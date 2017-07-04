@@ -13,8 +13,7 @@ import net.corda.core.messaging.SingleMessageRecipient
 import net.corda.core.node.services.ServiceInfo
 import net.corda.flows.FetchAttachmentsFlow
 import net.corda.flows.FetchDataFlow
-import net.corda.flows.sendWithDataVending
-import net.corda.flows.startDataVending
+import net.corda.flows.SendDataFlow
 import net.corda.node.services.config.NodeConfiguration
 import net.corda.node.services.database.RequeryConfiguration
 import net.corda.node.services.network.NetworkMapService
@@ -168,9 +167,7 @@ class AttachmentTests {
     @InitiatedBy(InitiatingWrapper::class)
     private class TestResponse(val otherSide: Party) : FlowLogic<Unit>() {
         @Suspendable
-        override fun call() {
-            startDataVending(otherSide)
-        }
+        override fun call() = subFlow(SendDataFlow(otherSide))
     }
 
     private fun <T> FlowLogic<T>.initiating() = InitiatingWrapper(this)

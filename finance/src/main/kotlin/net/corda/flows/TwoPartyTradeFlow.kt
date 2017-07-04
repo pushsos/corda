@@ -78,7 +78,8 @@ object TwoPartyTradeFlow {
             val hello = SellerTradeInfo(assetToSell, price, myKey)
             // What we get back from the other side is a transaction that *might* be valid and acceptable to us,
             // but we must check it out thoroughly before we sign!
-            sendWithDataVending(otherParty, hello)
+            send(otherParty, hello)
+            subFlow(SendDataFlow(otherParty))
             // Verify and sign the transaction.
             progressTracker.currentStep = VERIFYING_AND_SIGNING
             // DOCSTART 5
@@ -112,11 +113,13 @@ object TwoPartyTradeFlow {
                      val typeToBuy: Class<out OwnableState>) : FlowLogic<SignedTransaction>() {
         // DOCSTART 2
         object RECEIVING : ProgressTracker.Step("Waiting for seller trading info")
+
         object VERIFYING : ProgressTracker.Step("Verifying seller assets")
         object SIGNING : ProgressTracker.Step("Generating and signing transaction proposal")
         object COLLECTING_SIGNATURES : ProgressTracker.Step("Collecting signatures from other parties") {
             override fun childProgressTracker() = CollectSignaturesFlow.tracker()
         }
+
         object RECORDING : ProgressTracker.Step("Recording completed transaction") {
             // TODO: Currently triggers a race condition on Team City. See https://github.com/corda/corda/issues/733.
             // override fun childProgressTracker() = FinalityFlow.tracker()
