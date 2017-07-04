@@ -57,7 +57,7 @@ class HibernateVaultQueryImpl(hibernateConfig: HibernateConfiguration,
 
             try {
                 // parse criteria and build where predicates
-                criteriaParser.parse(criteria, sorting)
+                val (selections, predicates) = criteriaParser.parse(criteria, sorting)
 
                 // prepare query for execution
                 val query = session.createQuery(criteriaQuery)
@@ -68,7 +68,9 @@ class HibernateVaultQueryImpl(hibernateConfig: HibernateConfiguration,
 
                 // count total results available
                 val countQuery = criteriaBuilder.createQuery(Long::class.java)
-                countQuery.select(criteriaBuilder.count(countQuery.from(VaultSchemaV1.VaultStates::class.java)))
+                selections.map { countQuery.from(it.model) }
+                countQuery.select(criteriaBuilder.count(selections.iterator().next()))
+                countQuery.where(*predicates.toTypedArray())
                 val totalStates = session.createQuery(countQuery).singleResult.toInt()
 
                 if ((paging.pageNumber != 0) && (paging.pageSize * paging.pageNumber >= totalStates))
