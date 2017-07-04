@@ -8,8 +8,8 @@ import net.corda.core.utilities.UntrustworthyData
 import net.corda.core.utilities.unwrap
 
 /**
- * The [SendDataFlow] provide ad hoc data vending service, which anticipate data request from the [otherSide] during
- * transaction resolving process.
+ * The [SendDataFlow] provide ad hoc data vending service, which anticipate incoming data request from the [otherSide]
+ * during the transaction resolving process.
  *
  * @param otherSide the target party.
  * @param requestVerifier optional verifier to spot potential malicious data request, the [requestVerifier] can have additional

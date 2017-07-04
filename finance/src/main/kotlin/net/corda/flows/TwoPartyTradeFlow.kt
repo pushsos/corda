@@ -79,6 +79,7 @@ object TwoPartyTradeFlow {
             // What we get back from the other side is a transaction that *might* be valid and acceptable to us,
             // but we must check it out thoroughly before we sign!
             send(otherParty, hello)
+            // Allow otherParty to access our data to resolve the transaction.
             subFlow(SendDataFlow(otherParty))
             // Verify and sign the transaction.
             progressTracker.currentStep = VERIFYING_AND_SIGNING

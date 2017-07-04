@@ -162,6 +162,7 @@ class ForeignExchangeFlow(val tradeId: String,
 
         // pass transaction details to the counterparty to revalidate and confirm with a signature
         send(remoteRequestWithNotary.owner, signedTransaction)
+        // Allow otherParty to access our data to resolve the transaction.
         subFlow(SendDataFlow(remoteRequestWithNotary.owner))
         val allPartySignedTx = receive<DigitalSignature.WithKey>(remoteRequestWithNotary.owner).unwrap {
             val withNewSignature = signedTransaction + it
@@ -239,6 +240,7 @@ class ForeignExchangeRemoteFlow(val source: Party) : FlowLogic<Unit>() {
         // Send back our proposed states and await the full transaction to verify
         val ourKey = serviceHub.keyManagementService.filterMyKeys(ourResponse.inputs.flatMap { it.state.data.participants }.map { it.owningKey }).single()
         send(source, ourResponse)
+        // Allow otherParty to access our data to resolve the transaction.
         subFlow(SendDataFlow(source))
         val proposedTrade = receive<SignedTransaction>(source).unwrap {
             val wtx = it.tx
