@@ -31,7 +31,8 @@ import java.util.*
  */
 abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
         protected val requests: Set<SecureHash>,
-        protected val otherSide: Party) : FlowLogic<FetchDataFlow.Result<T>>() {
+        protected val otherSide: Party,
+        private val sendEndRequest: Boolean) : FlowLogic<FetchDataFlow.Result<T>>() {
 
     @CordaSerializable
     class DownloadedVsRequestedDataMismatch(val requested: SecureHash, val got: SecureHash) : IllegalArgumentException()
@@ -55,7 +56,7 @@ abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
         // Load the items we have from disk and figure out which we're missing.
         val (fromDisk, toFetch) = loadWhatWeHave()
 
-        return if (toFetch.isEmpty()) {
+        val result = if (toFetch.isEmpty()) {
             Result(fromDisk, emptyList())
         } else {
             logger.trace("Requesting ${toFetch.size} dependency(s) for verification")
@@ -67,6 +68,11 @@ abstract class FetchDataFlow<T : NamedByHash, in W : Any>(
             maybeWriteToDisk(downloaded)
             Result(fromDisk, downloaded)
         }
+
+        if(sendEndRequest){
+            send(otherSide, EndDataRequest())
+        }
+        return result
     }
 
     abstract fun createRequest(toFetch: List<SecureHash>): Request

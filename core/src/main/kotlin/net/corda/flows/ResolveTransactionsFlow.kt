@@ -149,7 +149,7 @@ class ResolveTransactionsFlow(private val txHashes: Set<SecureHash>,
                 break // Done early.
 
             // Request the standalone transaction data (which may refer to things we don't yet have).
-            val downloads = subFlow(FetchTransactionsFlow(notAlreadyFetched, otherSide)).downloaded
+            val downloads = subFlow(FetchTransactionsFlow(notAlreadyFetched, otherSide, false)).downloaded
 
             for (stx in downloads)
                 check(resultQ.putIfAbsent(stx.id, stx) == null)   // Assert checks the filter at the start.
@@ -172,6 +172,6 @@ class ResolveTransactionsFlow(private val txHashes: Set<SecureHash>,
         // TODO: This could be done in parallel with other fetches for extra speed.
         val missingAttachments = downloads.filter { serviceHub.attachments.openAttachment(it) == null }
         if (missingAttachments.isNotEmpty())
-            subFlow(FetchAttachmentsFlow(missingAttachments.toSet(), otherSide))
+            subFlow(FetchAttachmentsFlow(missingAttachments.toSet(), otherSide, false))
     }
 }

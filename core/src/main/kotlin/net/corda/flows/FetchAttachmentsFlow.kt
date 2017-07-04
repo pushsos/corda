@@ -14,7 +14,7 @@ import net.corda.core.serialization.SerializeAsTokenContext
  * Given a set of hashes either loads from from local storage  or requests them from the other peer. Downloaded
  * attachments are saved to local storage automatically.
  */
-class FetchAttachmentsFlow(requests: Set<SecureHash>, otherSide: Party) : FetchDataFlow<Attachment, ByteArray>(requests, otherSide) {
+class FetchAttachmentsFlow(requests: Set<SecureHash>, otherSide: Party, sendEndRequest: Boolean = true) : FetchDataFlow<Attachment, ByteArray>(requests, otherSide, sendEndRequest) {
     override fun createRequest(toFetch: List<SecureHash>) = FetchAttachmentsRequest(toFetch)
     override fun load(txid: SecureHash): Attachment? = serviceHub.attachments.openAttachment(txid)
     override fun convert(wire: ByteArray): Attachment = FetchedAttachment({ wire })

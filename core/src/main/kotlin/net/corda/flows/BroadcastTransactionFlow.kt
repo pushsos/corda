@@ -30,7 +30,7 @@ class BroadcastTransactionFlow(val notarisedTransaction: SignedTransaction,
             // This pops out the other side in NotifyTransactionHandler
             send(participant, msg)
             // Allow otherParty to access our data to resolve the transaction.
-            subFlow(SendDataFlow(participant))
+            subFlow(SendTransactionFlow(participant))
         }
     }
 }

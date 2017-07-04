@@ -13,7 +13,7 @@ import net.corda.core.messaging.SingleMessageRecipient
 import net.corda.core.node.services.ServiceInfo
 import net.corda.flows.FetchAttachmentsFlow
 import net.corda.flows.FetchDataFlow
-import net.corda.flows.SendDataFlow
+import net.corda.flows.SendTransactionFlow
 import net.corda.node.services.config.NodeConfiguration
 import net.corda.node.services.database.RequeryConfiguration
 import net.corda.node.services.network.NetworkMapService
@@ -91,7 +91,7 @@ class AttachmentTests {
         // Shut down node zero and ensure node one can still resolve the attachment.
         n0.stop()
 
-        val response: FetchDataFlow.Result<Attachment> = n1.services.startFlow(FetchAttachmentsFlow(setOf(id), n0.info.legalIdentity).initiating()).resultFuture.getOrThrow()
+        val response: FetchDataFlow.Result<Attachment> = n1.services.startFlow(FetchAttachmentsFlow(setOf(id), n0.info.legalIdentity, false).initiating()).resultFuture.getOrThrow()
         assertEquals(attachment, response.fromDisk[0])
     }
 
@@ -167,7 +167,7 @@ class AttachmentTests {
     @InitiatedBy(InitiatingWrapper::class)
     private class TestResponse(val otherSide: Party) : FlowLogic<Unit>() {
         @Suspendable
-        override fun call() = subFlow(SendDataFlow(otherSide))
+        override fun call() = subFlow(SendTransactionFlow(otherSide))
     }
 
     private fun <T> FlowLogic<T>.initiating() = InitiatingWrapper(this)

@@ -11,9 +11,8 @@ import net.corda.core.messaging.RPCOps
 import net.corda.core.messaging.SingleMessageRecipient
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.utilities.unwrap
-import net.corda.flows.EndDataRequest
 import net.corda.flows.FetchAttachmentsFlow
-import net.corda.flows.SendDataFlow
+import net.corda.flows.SendTransactionFlow
 import net.corda.node.internal.InitiatedFlowFactory
 import net.corda.node.services.config.NodeConfiguration
 import net.corda.node.services.network.NetworkMapService
@@ -89,7 +88,7 @@ class AttachmentSerializationTest {
         @Suspendable
         override fun call() {
             if (sendData) {
-                subFlow(SendDataFlow(client))
+                subFlow(SendTransactionFlow(client))
             }
             receive<String>(client).unwrap { assertEquals("ping one", it) }
             sendAndReceive<String>(client, "pong").unwrap { assertEquals("ping two", it) }
@@ -141,7 +140,6 @@ class AttachmentSerializationTest {
         @Suspendable
         override fun getAttachmentContent(): String {
             val (downloadedAttachment) = subFlow(FetchAttachmentsFlow(setOf(attachmentId), server)).downloaded
-            send(server, EndDataRequest())
             communicate()
             return downloadedAttachment.extractContent()
         }
