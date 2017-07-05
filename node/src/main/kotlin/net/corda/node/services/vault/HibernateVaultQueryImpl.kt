@@ -57,25 +57,23 @@ class HibernateVaultQueryImpl(hibernateConfig: HibernateConfiguration,
 
             try {
                 // parse criteria and build where predicates
-                val (selections, predicates) = criteriaParser.parse(criteria, sorting)
-
-                // prepare query for execution
-                val query = session.createQuery(criteriaQuery)
+                val (selections, _, orderSpec) = criteriaParser.parse(criteria, sorting)
 
                 // pagination
                 if (paging.pageNumber < 0) throw VaultQueryException("Page specification: invalid page number ${paging.pageNumber} [page numbers start from 0]")
                 if (paging.pageSize < 0 || paging.pageSize > MAX_PAGE_SIZE) throw VaultQueryException("Page specification: invalid page size ${paging.pageSize} [maximum page size is ${MAX_PAGE_SIZE}]")
 
-                // count total results available
-                val countQuery = criteriaBuilder.createQuery(Long::class.java)
-                selections.map { countQuery.from(it.model) }
-                countQuery.select(criteriaBuilder.count(selections.iterator().next()))
-                countQuery.where(*predicates.toTypedArray())
-                val totalStates = session.createQuery(countQuery).singleResult.toInt()
+                val countResults = criteriaBuilder.count(queryRootVaultStates)
+                criteriaQuery.multiselect(countResults)
+                val totalStates = (session.createQuery(criteriaQuery).singleResult[0] as Long).toInt()
 
                 if ((paging.pageNumber != 0) && (paging.pageSize * paging.pageNumber >= totalStates))
                     throw VaultQueryException("Requested more results than available [${paging.pageSize} * ${paging.pageNumber} >= ${totalStates}]")
 
+                // prepare query for execution
+                criteriaQuery.multiselect(selections)
+                criteriaQuery.orderBy(orderSpec)
+                val query = session.createQuery(criteriaQuery)
                 query.firstResult = paging.pageNumber * paging.pageSize
                 query.maxResults = paging.pageSize
 
