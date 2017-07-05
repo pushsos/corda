@@ -56,7 +56,8 @@ fun Database.createTransaction(): Transaction {
 
 fun configureDatabase(props: Properties): Pair<Closeable, Database> {
     val config = HikariConfig(props)
-    val dataSource = HikariDataSource(config)
+    //val dataSource = HikariDataSource(config)
+    val dataSource = CordaDatabase(HikariDataSource(config))
     val database = Database.connect(dataSource) { db -> StrandLocalTransactionManager(db) }
     // Check not in read-only mode.
     database.transaction {

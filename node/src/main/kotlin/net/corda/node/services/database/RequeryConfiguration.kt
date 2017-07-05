@@ -8,6 +8,7 @@ import io.requery.sql.KotlinEntityDataStore
 import io.requery.sql.SchemaModifier
 import io.requery.sql.TableCreationMode
 import net.corda.core.utilities.loggerFor
+import net.corda.node.utilities.CordaDatabase
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import java.sql.Connection
 import java.util.*
@@ -28,7 +29,8 @@ class RequeryConfiguration(val properties: Properties, val useDefaultLogging: Bo
 
     // Note: Annotations are pre-processed using (kapt) so no need to register dynamically
     val config = HikariConfig(properties)
-    val dataSource = HikariDataSource(config)
+    //val dataSource = HikariDataSource(config)
+    val dataSource  = CordaDatabase(HikariDataSource(config))
 
     // TODO: make this a guava cache or similar to limit ability for this to grow forever.
     private val sessionFactories = ConcurrentHashMap<EntityModel, KotlinEntityDataStore<Persistable>>()
