@@ -1,8 +1,6 @@
 package net.corda.core.concurrent
 
-import com.google.common.util.concurrent.SettableFuture
 import com.nhaarman.mockito_kotlin.*
-import net.corda.core.getOrThrow
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
 import org.slf4j.Logger
@@ -12,10 +10,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ConcurrencyUtilsTest {
-    private val f1 = SettableFuture.create<Int>()
-    private val f2 = SettableFuture.create<Double>()
+    private val f1 = openFuture<Int>()
+    private val f2 = openFuture<Double>()
     private var invocations = 0
-    private val log: Logger = mock<Logger>()
+    private val log = mock<Logger>()
     @Test
     fun `firstOf short circuit`() {
         // Order not significant in this case:

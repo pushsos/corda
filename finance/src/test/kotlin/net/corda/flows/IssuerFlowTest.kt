@@ -1,15 +1,13 @@
 package net.corda.flows
 
-import com.google.common.util.concurrent.ListenableFuture
+import net.corda.core.concurrent.CordaFuture
 import net.corda.testing.contracts.calculateRandomlySizedAmounts
 import net.corda.core.contracts.Amount
 import net.corda.core.contracts.DOLLARS
 import net.corda.core.contracts.currency
 import net.corda.core.flows.FlowException
 import net.corda.core.internal.FlowStateMachine
-import net.corda.core.getOrThrow
 import net.corda.core.identity.Party
-import net.corda.core.map
 import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.toFuture
 import net.corda.core.transactions.SignedTransaction
@@ -104,7 +102,7 @@ class IssuerFlowTest {
     }
 
     private data class RunResult(
-            val issuer: ListenableFuture<FlowStateMachine<*>>,
-            val issueRequestResult: ListenableFuture<AbstractCashFlow.Result>
+            val issuer: CordaFuture<FlowStateMachine<*>>,
+            val issueRequestResult: CordaFuture<AbstractCashFlow.Result>
     )
 }

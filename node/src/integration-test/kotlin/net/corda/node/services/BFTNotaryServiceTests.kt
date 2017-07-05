@@ -9,7 +9,6 @@ import net.corda.testing.contracts.DummyContract
 import net.corda.core.crypto.CompositeKey
 import net.corda.core.crypto.SecureHash
 import net.corda.core.div
-import net.corda.core.getOrThrow
 import net.corda.core.identity.Party
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.utilities.NetworkHostAndPort
@@ -26,7 +25,6 @@ import net.corda.node.utilities.transaction
 import net.corda.testing.node.MockNetwork
 import org.bouncycastle.asn1.x500.X500Name
 import org.junit.After
-import org.junit.Ignore
 import org.junit.Test
 import java.nio.file.Files
 import kotlin.test.assertEquals

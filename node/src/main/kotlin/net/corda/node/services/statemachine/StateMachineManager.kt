@@ -12,10 +12,10 @@ import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import com.esotericsoftware.kryo.pool.KryoPool
 import com.google.common.collect.HashMultimap
-import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import io.requery.util.CloseableIterator
 import net.corda.core.*
+import net.corda.core.concurrent.CordaFuture
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.random63BitValue
 import net.corda.core.flows.FlowException
@@ -171,7 +171,7 @@ class StateMachineManager(val serviceHub: ServiceHubInternal,
     }
 
     /** Returns a list of all state machines executing the given flow logic at the top level (subflows do not count) */
-    fun <P : FlowLogic<T>, T> findStateMachines(flowClass: Class<P>): List<Pair<P, ListenableFuture<T>>> {
+    fun <P : FlowLogic<T>, T> findStateMachines(flowClass: Class<P>): List<Pair<P, CordaFuture<T>>> {
         @Suppress("UNCHECKED_CAST")
         return mutex.locked {
             stateMachines.keys

@@ -12,7 +12,7 @@ import com.google.common.cache.RemovalListener
 import com.google.common.util.concurrent.SettableFuture
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import net.corda.core.ThreadBox
-import net.corda.core.getOrThrow
+import net.corda.core.concurrent.getOrThrow
 import net.corda.core.messaging.RPCOps
 import net.corda.core.crypto.random63BitValue
 import net.corda.core.serialization.KryoPoolWithContext

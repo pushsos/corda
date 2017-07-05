@@ -3,12 +3,13 @@ package net.corda.node.internal
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.MutableClassToInstanceMap
-import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
-import com.google.common.util.concurrent.SettableFuture
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner
 import io.github.lukehutch.fastclasspathscanner.scanner.ScanResult
 import net.corda.core.*
+import net.corda.core.concurrent.CordaFuture
+import net.corda.core.concurrent.OpenFuture
+import net.corda.core.concurrent.openFuture
 import net.corda.core.crypto.*
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -137,9 +138,9 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     var isPreviousCheckpointsPresent = false
         private set
 
-    protected val _networkMapRegistrationFuture: SettableFuture<Unit> = SettableFuture.create()
+    protected val _networkMapRegistrationFuture: OpenFuture<Unit> = openFuture()
     /** Completes once the node has successfully registered with the network map service */
-    val networkMapRegistrationFuture: ListenableFuture<Unit>
+    val networkMapRegistrationFuture: CordaFuture<Unit>
         get() = _networkMapRegistrationFuture
 
     /** Fetch CordaPluginRegistry classes registered in META-INF/services/net.corda.core.node.CordaPluginRegistry files that exist in the classpath */
@@ -212,7 +213,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
             initUploaders()
 
             runOnStop += network::stop
-            _networkMapRegistrationFuture.setFuture(registerWithNetworkMapIfConfigured())
+            registerWithNetworkMapIfConfigured().then { _networkMapRegistrationFuture.catch { it.getOrThrow() } }
             smm.start()
             // Shut down the SMM so no Fibers are scheduled.
             runOnStop += { smm.stop(acceptableLiveFiberCountOnStop()) }
@@ -581,7 +582,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         }
     }
 
-    private fun registerWithNetworkMapIfConfigured(): ListenableFuture<Unit> {
+    private fun registerWithNetworkMapIfConfigured(): CordaFuture<Unit> {
         services.networkMapCache.addNode(info)
         // In the unit test environment, we may sometimes run without any network map service
         return if (networkMapAddress == null && inNodeNetworkMapService == null) {
@@ -596,7 +597,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
      * Register this node with the network map cache, and load network map from a remote service (and register for
      * updates) if one has been supplied.
      */
-    protected open fun registerWithNetworkMap(): ListenableFuture<Unit> {
+    protected open fun registerWithNetworkMap(): CordaFuture<Unit> {
         require(networkMapAddress != null || NetworkMapService.type in advertisedServices.map { it.type }) {
             "Initial network map address must indicate a node that provides a network map service"
         }
@@ -610,7 +611,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         }
     }
 
-    private fun sendNetworkMapRegistration(networkMapAddress: SingleMessageRecipient): ListenableFuture<RegistrationResponse> {
+    private fun sendNetworkMapRegistration(networkMapAddress: SingleMessageRecipient): CordaFuture<RegistrationResponse> {
         // Register this node against the network
         val instant = platformClock.instant()
         val expires = instant + NetworkMapService.DEFAULT_EXPIRATION_PERIOD
@@ -624,7 +625,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     protected abstract fun myAddresses(): List<NetworkHostAndPort>
 
     /** This is overriden by the mock node implementation to enable operation without any network map service */
-    protected open fun noNetworkMapConfigured(): ListenableFuture<Unit> {
+    protected open fun noNetworkMapConfigured(): CordaFuture<Unit> {
         // TODO: There should be a consistent approach to configuration error exceptions.
         throw IllegalStateException("Configuration error: this node isn't being asked to act as the network map, nor " +
                 "has any other map node been configured.")

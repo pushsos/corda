@@ -1,7 +1,7 @@
 package net.corda.client.rpc
 
 import net.corda.client.rpc.internal.RPCClientConfiguration
-import net.corda.core.future
+import net.corda.core.concurrent.future
 import net.corda.core.messaging.RPCOps
 import net.corda.core.millis
 import net.corda.core.crypto.random63BitValue

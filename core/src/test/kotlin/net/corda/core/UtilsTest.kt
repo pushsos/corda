@@ -1,9 +1,9 @@
 package net.corda.core
 
-import com.google.common.util.concurrent.MoreExecutors
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.same
 import com.nhaarman.mockito_kotlin.verify
+import net.corda.core.concurrent.fork
 import org.assertj.core.api.Assertions.*
 import org.junit.Test
 import org.mockito.ArgumentMatchers.anyString
@@ -70,8 +70,8 @@ class UtilsTest {
     fun `andForget works`() {
         val log = mock<Logger>()
         val throwable = Exception("Boom")
-        val executor = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor())
-        executor.submit { throw throwable }.andForget(log)
+        val executor = Executors.newSingleThreadExecutor()
+        executor.fork { throw throwable }.andForget(log)
         executor.shutdown()
         while (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
             // Do nothing.
