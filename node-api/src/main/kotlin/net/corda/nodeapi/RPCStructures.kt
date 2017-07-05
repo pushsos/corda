@@ -5,7 +5,6 @@ package net.corda.nodeapi
 import com.esotericsoftware.kryo.Registration
 import com.esotericsoftware.kryo.Serializer
 import com.google.common.util.concurrent.ListenableFuture
-import net.corda.core.requireExternal
 import net.corda.core.serialization.*
 import net.corda.core.toFuture
 import net.corda.core.toObservable
@@ -72,5 +71,9 @@ class RPCKryo(observableSerializer: Serializer<Observable<Any>>) : CordaKryo(mak
         }
         type.requireExternal("RPC not allowed to deserialise internal classes")
         return super.getRegistration(type)
+    }
+
+    private fun Class<*>.requireExternal(msg: String) {
+        require(!name.startsWith("net.corda.node.") && ".internal." !in name) { "$msg: $name" }
     }
 }
