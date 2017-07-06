@@ -433,7 +433,7 @@ class NodeVaultServiceTest {
         assertTrue { NodeVaultService.isRelevant(wellKnownCash, services.keyManagementService.keys) }
 
         val anonymousIdentity = services.keyManagementService.freshKeyAndCert(services.myInfo.legalIdentityAndCert, false)
-        val anonymousCash = Cash.State(amount, anonymousIdentity.identity)
+        val anonymousCash = Cash.State(amount, anonymousIdentity.party)
         assertTrue { NodeVaultService.isRelevant(anonymousCash, services.keyManagementService.keys) }
 
         val thirdPartyIdentity = AnonymousParty(generateKeyPair().public)
@@ -451,11 +451,11 @@ class NodeVaultServiceTest {
         val thirdPartyIdentity = AnonymousParty(generateKeyPair().public)
 
         // Assemble a cash transaction and ensure that our output is correctly identified as ours
-        val ourCash = Cash.State(amount, anonymousIdentity.identity)
+        val ourCash = Cash.State(amount, anonymousIdentity.party)
         val theirCash = Cash.State(amount, thirdPartyIdentity)
         builder.addOutputState(ourCash)
         builder.addOutputState(theirCash)
-        builder.addCommand(Cash.Commands.Issue(random63BitValue()), anonymousIdentity.identity.owningKey)
+        builder.addCommand(Cash.Commands.Issue(random63BitValue()), anonymousIdentity.party.owningKey)
         val tx = builder.toWireTransaction()
         val ourNewStates = NodeVaultService.ourStates(tx, services.keyManagementService.keys)
         assertEquals(listOf(ourCash), ourNewStates.map { it.state.data })

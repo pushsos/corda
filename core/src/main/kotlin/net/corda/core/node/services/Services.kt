@@ -9,6 +9,7 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.keys
 import net.corda.core.flows.FlowException
 import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.messaging.DataFeed
@@ -21,7 +22,6 @@ import net.corda.core.toFuture
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.transactions.WireTransaction
-import net.corda.flows.AnonymisedIdentity
 import rx.Observable
 import rx.subjects.PublishSubject
 import java.io.InputStream
@@ -119,7 +119,7 @@ class Vault<out T : ContractState>(val states: Iterable<StateAndRef<T>>) {
      *  1) a [List] of actual [StateAndRef] requested by the specified [QueryCriteria] to a maximum of [MAX_PAGE_SIZE]
      *  2) a [List] of associated [Vault.StateMetadata], one per [StateAndRef] result
      *  3) the [PageSpecification] definition used to bound this result set
-     *  4) a total number of states that met the given [QueryCriteria]
+     *  4) a total number of states that met the given [QueryCCariteria]
      *     Note that this may be more than the specified [PageSpecification.pageSize], and should be used to perform
      *     further pagination (by issuing new queries).
      */
@@ -485,7 +485,7 @@ interface KeyManagementService {
      * @return X.509 certificate and path to the trust root.
      */
     @Suspendable
-    fun freshKeyAndCert(identity: PartyAndCertificate, revocationEnabled: Boolean): AnonymisedIdentity
+    fun freshKeyAndCert(identity: PartyAndCertificate<Party>, revocationEnabled: Boolean): PartyAndCertificate<AnonymousParty>
 
     /**
      * Filter some keys down to the set that this node owns (has private keys for).

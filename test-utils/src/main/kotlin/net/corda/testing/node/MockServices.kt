@@ -4,6 +4,8 @@ import com.google.common.net.HostAndPort
 import net.corda.core.contracts.Attachment
 import net.corda.core.crypto.*
 import net.corda.core.flows.StateMachineRunId
+import net.corda.core.identity.AnonymousParty
+import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.messaging.DataFeed
 import net.corda.core.node.NodeInfo
@@ -12,8 +14,6 @@ import net.corda.core.node.services.*
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.transactions.SignedTransaction
-import net.corda.testing.DUMMY_CA
-import net.corda.flows.AnonymisedIdentity
 import net.corda.node.services.api.StateMachineRecordedTransactionMappingStorage
 import net.corda.node.services.api.WritableTransactionStorage
 import net.corda.node.services.database.HibernateConfiguration
@@ -25,10 +25,7 @@ import net.corda.node.services.schema.HibernateObserver
 import net.corda.node.services.schema.NodeSchemaService
 import net.corda.node.services.transactions.InMemoryTransactionVerifierService
 import net.corda.node.services.vault.NodeVaultService
-import net.corda.testing.MEGA_CORP
-import net.corda.testing.MOCK_IDENTITIES
-import net.corda.testing.MOCK_VERSION_INFO
-import net.corda.testing.getTestPartyAndCertificate
+import net.corda.testing.*
 import org.bouncycastle.operator.ContentSigner
 import rx.Observable
 import rx.subjects.PublishSubject
@@ -105,7 +102,7 @@ class MockKeyManagementService(val identityService: IdentityService,
 
     override fun filterMyKeys(candidateKeys: Iterable<PublicKey>): Iterable<PublicKey> = candidateKeys.filter { it in this.keys }
 
-    override fun freshKeyAndCert(identity: PartyAndCertificate, revocationEnabled: Boolean): AnonymisedIdentity {
+    override fun freshKeyAndCert(identity: PartyAndCertificate<Party>, revocationEnabled: Boolean): PartyAndCertificate<AnonymousParty> {
         return freshCertificate(identityService, freshKey(), identity, getSigner(identity.owningKey), revocationEnabled)
     }
 
