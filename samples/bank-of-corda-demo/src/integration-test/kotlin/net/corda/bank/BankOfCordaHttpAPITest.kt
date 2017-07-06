@@ -5,10 +5,9 @@ import net.corda.bank.api.BankOfCordaClientApi
 import net.corda.bank.api.BankOfCordaWebApi.IssueRequestParams
 import net.corda.core.getOrThrow
 import net.corda.core.node.services.ServiceInfo
-import net.corda.core.utilities.DUMMY_NOTARY
-import net.corda.testing.driver.driver
 import net.corda.node.services.transactions.SimpleNotaryService
 import net.corda.testing.BOC
+import net.corda.testing.driver.driver
 import org.junit.Test
 import kotlin.test.assertTrue
 
