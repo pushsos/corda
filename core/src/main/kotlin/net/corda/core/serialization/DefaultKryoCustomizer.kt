@@ -9,7 +9,8 @@ import de.javakaffee.kryoserializers.BitSetSerializer
 import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
 import de.javakaffee.kryoserializers.guava.*
 import net.corda.core.crypto.CompositeKey
-import net.corda.core.crypto.MetaData
+import net.corda.core.crypto.TransactionMeta
+import net.corda.core.crypto.MerkleRootWithMeta
 import net.corda.core.node.CordaPluginRegistry
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
@@ -88,7 +89,8 @@ object DefaultKryoCustomizer {
 
             addDefaultSerializer(SerializeAsToken::class.java, SerializeAsTokenSerializer<SerializeAsToken>())
 
-            register(MetaData::class.java, MetaDataSerializer)
+            register(MerkleRootWithMeta::class.java, MerkleRootWithMetaSerializer)
+            register(TransactionMeta::class.java, TransactionMetaSerializer)
             register(BitSet::class.java, BitSetSerializer())
             register(Class::class.java, ClassSerializer)
 

@@ -35,7 +35,6 @@ import java.security.PublicKey
 import java.security.cert.CertPath
 import java.security.cert.CertificateFactory
 import java.security.spec.InvalidKeySpecException
-import java.time.Instant
 import java.util.*
 import javax.annotation.concurrent.ThreadSafe
 import kotlin.reflect.KClass
@@ -557,30 +556,33 @@ fun <T> Kryo.withoutReferences(block: () -> T): T {
 
 /** For serialising a MetaData object. */
 @ThreadSafe
-object MetaDataSerializer : Serializer<MetaData>() {
-    override fun write(kryo: Kryo, output: Output, obj: MetaData) {
-        output.writeString(obj.schemeCodeName)
-        output.writeString(obj.versionID)
-        kryo.writeClassAndObject(output, obj.signatureType)
-        kryo.writeClassAndObject(output, obj.timestamp)
-        kryo.writeClassAndObject(output, obj.visibleInputs)
-        kryo.writeClassAndObject(output, obj.signedInputs)
-        output.writeBytesWithLength(obj.merkleRoot)
-        output.writeBytesWithLength(obj.publicKey.encoded)
+object MerkleRootWithMetaSerializer : Serializer<MerkleRootWithMeta>() {
+    override fun write(kryo: Kryo, output: Output, obj: MerkleRootWithMeta) {
+        kryo.writeClassAndObject(output, obj.merkleRoot)
+        kryo.writeClassAndObject(output, obj.transactionMeta)
     }
 
     @Suppress("UNCHECKED_CAST")
-    @Throws(IllegalArgumentException::class, InvalidKeySpecException::class)
-    override fun read(kryo: Kryo, input: Input, type: Class<MetaData>): MetaData {
-        val schemeCodeName = input.readString()
-        val versionID = input.readString()
-        val signatureType = kryo.readClassAndObject(input) as SignatureType
-        val timestamp = kryo.readClassAndObject(input) as Instant?
-        val visibleInputs = kryo.readClassAndObject(input) as BitSet?
-        val signedInputs = kryo.readClassAndObject(input) as BitSet?
-        val merkleRoot = input.readBytesWithLength()
-        val publicKey = Crypto.decodePublicKey(schemeCodeName, input.readBytesWithLength())
-        return MetaData(schemeCodeName, versionID, signatureType, timestamp, visibleInputs, signedInputs, merkleRoot, publicKey)
+    @Throws(InvalidKeySpecException::class)
+    override fun read(kryo: Kryo, input: Input, type: Class<MerkleRootWithMeta>): MerkleRootWithMeta {
+        val merkleRoot = kryo.readClassAndObject(input) as SecureHash
+        val transactionMeta = kryo.readClassAndObject(input) as TransactionMeta
+        return MerkleRootWithMeta(merkleRoot, transactionMeta)
+    }
+}
+
+/** For serialising an TransactionMeta object. */
+@ThreadSafe
+object TransactionMetaSerializer : Serializer<TransactionMeta>() {
+    override fun write(kryo: Kryo, output: Output, obj: TransactionMeta) {
+        output.writeInt(obj.platformVersion)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Throws(InvalidKeySpecException::class)
+    override fun read(kryo: Kryo, input: Input, type: Class<TransactionMeta>): TransactionMeta {
+        val platformVersion = input.readInt()
+        return TransactionMeta(platformVersion)
     }
 }
 
