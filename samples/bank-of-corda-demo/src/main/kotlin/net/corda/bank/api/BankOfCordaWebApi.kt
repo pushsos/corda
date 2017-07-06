@@ -63,10 +63,8 @@ class BankOfCordaWebApi(val rpc: CordaRPCOps) {
             logger.info("Issue request completed successfully: $params")
             Response.status(Response.Status.CREATED).build()
         } catch (e: Exception) {
-            val out = StringWriter()
-            e.printStackTrace(PrintWriter(out))
-            logger.error("Issue request failed: ${e}")
-            Response.status(Response.Status.FORBIDDEN).entity(out.toString()).build()
+            logger.error("Issue request failed: ${e}", e)
+            Response.status(Response.Status.FORBIDDEN).build()
         }
     }
 }

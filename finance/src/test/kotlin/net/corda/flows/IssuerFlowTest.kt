@@ -73,11 +73,11 @@ class IssuerFlowTest {
                             require(update.consumed.isEmpty()) { "Expected 0 consumed states, actual: $update" }
                             require(update.produced.size == 1) { "Expected 1 produced states, actual: $update" }
                         }
-                        // MOVE
-                        /* expect { update ->
-                            require(update.consumed.size == 1) { "Expected 1 consumed states, actual: $update" }
-                            require(update.produced.isEmpty()) { "Expected 0 produced states, actual: $update" }
-                        } */
+                        // TODO: Should check the move transaction consumes one input and produces zero, however
+                        // for some reason the "expect" hangs if we try. Verifying on the receiving side is sufficient,
+                        // but should investigate why this doesn't work.
+                        // This is covered in [BankOfCordaRPCClientTest], and the failure here is almost certain an
+                        // issue with this test.
                 )
             }
 
