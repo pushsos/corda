@@ -62,7 +62,7 @@ class IssuerFlowTest {
             val vaultUpdatesBankClient = bankClientNode.services.vaultQueryService.trackBy(Cash.State::class.java).updates
             // using default IssueTo Party Reference
             val (issuer, issuerResult) = runIssuerAndIssueRequester(bankOfCordaNode, bankClientNode, 1000000.DOLLARS,
-                    bankClientNode.info.legalIdentity, OpaqueBytes.of(123), notary)
+                    bankClientNode.info.legalIdentity, OpaqueBytes.of(123), notary, anonymous = true)
             assertEquals(issuerResult.get().stx, issuer.get().resultFuture.get())
 
             // Check Bank of Corda Vault Updates
@@ -96,8 +96,17 @@ class IssuerFlowTest {
         // try to issue an amount of a restricted currency
         assertFailsWith<FlowException> {
             runIssuerAndIssueRequester(bankOfCordaNode, bankClientNode, Amount(100000L, currency("BRL")),
-                    bankClientNode.info.legalIdentity, OpaqueBytes.of(123), notary).issueRequestResult.getOrThrow()
+                    bankClientNode.info.legalIdentity, OpaqueBytes.of(123), notary, anonymous = true).issueRequestResult.getOrThrow()
         }
+    }
+
+    @Test
+    fun `test issuer flow without anonymisation`() {
+        val notary = notaryNode.services.myInfo.notaryIdentity
+        // using default IssueTo Party Reference
+        val (issuer, issuerResult) = runIssuerAndIssueRequester(bankOfCordaNode, bankClientNode, 1000000.DOLLARS,
+                bankClientNode.info.legalIdentity, OpaqueBytes.of(123), notary, anonymous = false)
+        assertEquals(issuerResult.get().stx, issuer.get().resultFuture.get())
     }
 
     @Test
@@ -105,7 +114,7 @@ class IssuerFlowTest {
         val notary = notaryNode.services.myInfo.notaryIdentity
         // using default IssueTo Party Reference
         val (issuer, issuerResult) = runIssuerAndIssueRequester(bankOfCordaNode, bankOfCordaNode, 1000000.DOLLARS,
-                bankOfCordaNode.info.legalIdentity, OpaqueBytes.of(123), notary)
+                bankOfCordaNode.info.legalIdentity, OpaqueBytes.of(123), notary, anonymous = true)
         assertEquals(issuerResult.get().stx, issuer.get().resultFuture.get())
     }
 
@@ -117,7 +126,22 @@ class IssuerFlowTest {
         val amounts = calculateRandomlySizedAmounts(10000.DOLLARS, 10, 10, Random())
         val handles = amounts.map { pennies ->
             runIssuerAndIssueRequester(bankOfCordaNode, bankClientNode, Amount(pennies, amount.token),
-                    bankClientNode.info.legalIdentity, OpaqueBytes.of(123), notary)
+                    bankClientNode.info.legalIdentity, OpaqueBytes.of(123), notary, anonymous = true)
+        }
+        handles.forEach {
+            require(it.issueRequestResult.get().stx is SignedTransaction)
+        }
+    }
+
+    @Test
+    fun `test concurrent issuer flow without anonymisation`() {
+        val notary = notaryNode.services.myInfo.notaryIdentity
+        // this test exercises the Cashflow issue and move subflows to ensure consistent spending of issued states
+        val amount = 10000.DOLLARS
+        val amounts = calculateRandomlySizedAmounts(10000.DOLLARS, 10, 10, Random())
+        val handles = amounts.map { pennies ->
+            runIssuerAndIssueRequester(bankOfCordaNode, bankClientNode, Amount(pennies, amount.token),
+                    bankClientNode.info.legalIdentity, OpaqueBytes.of(123), notary, anonymous = false)
         }
         handles.forEach {
             require(it.issueRequestResult.get().stx is SignedTransaction)
@@ -129,13 +153,14 @@ class IssuerFlowTest {
                                            amount: Amount<Currency>,
                                            issueToParty: Party,
                                            ref: OpaqueBytes,
-                                           notaryParty: Party): RunResult {
+                                           notaryParty: Party,
+                                           anonymous: Boolean): RunResult {
         val issueToPartyAndRef = issueToParty.ref(ref)
         val issuerFlows: Observable<IssuerFlow.Issuer> = issuerNode.registerInitiatedFlow(IssuerFlow.Issuer::class.java)
         val firstIssuerFiber = issuerFlows.toFuture().map { it.stateMachine }
 
         val issueRequest = IssuanceRequester(amount, issueToParty, issueToPartyAndRef.reference, issuerNode.info.legalIdentity,
-                notaryParty, anonymous = true)
+                notaryParty, anonymous)
         val issueRequestResultFuture = issueToNode.services.startFlow(issueRequest).resultFuture
 
         return IssuerFlowTest.RunResult(firstIssuerFiber, issueRequestResultFuture)
