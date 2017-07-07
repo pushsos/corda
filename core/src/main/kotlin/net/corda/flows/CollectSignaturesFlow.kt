@@ -62,7 +62,7 @@ import java.security.PublicKey
 // TODO: AbstractStateReplacementFlow needs updating to use this flow.
 // TODO: Update this flow to handle randomly generated keys when that works is complete.
 class CollectSignaturesFlow(val partiallySignedTx: SignedTransaction,
-                            val identities: LinkedHashMap<Party, AnonymisedIdentity>,
+                            val identities: Map<Party, AnonymisedIdentity>,
                             override val progressTracker: ProgressTracker = tracker()): FlowLogic<SignedTransaction>() {
 
     companion object {

@@ -6,6 +6,7 @@ import net.corda.core.contracts.requireThat
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.node.NodeInfo
 import net.corda.core.node.services.ServiceType
@@ -101,7 +102,12 @@ object TwoPartyDealFlow {
             progressTracker.currentStep = COLLECTING_SIGNATURES
 
             // DOCSTART 1
-            val stx = subFlow(CollectSignaturesFlow(ptx))
+            // TODO: Use actual anonymised identities, not fake ones derived from the well known identity
+            val fullOtherParty = serviceHub.identityService.certificateFromParty(otherParty)!!
+            val myAnonymisedIdentity = AnonymisedIdentity(serviceHub.myInfo.legalIdentityAndCert.certPath, serviceHub.myInfo.legalIdentityAndCert.certificate, serviceHub.myInfo.legalIdentity.owningKey)
+            val theirAnonymisedIdentity = AnonymisedIdentity(fullOtherParty.certPath, fullOtherParty.certificate, fullOtherParty.owningKey)
+            val identities: Map<Party, AnonymisedIdentity> = listOf(Pair(serviceHub.myInfo.legalIdentity, myAnonymisedIdentity), Pair(otherParty, theirAnonymisedIdentity)).toMap()
+            val stx = subFlow(CollectSignaturesFlow(ptx, identities))
             // DOCEND 1
 
             logger.trace { "Got signatures from other party, verifying ... " }

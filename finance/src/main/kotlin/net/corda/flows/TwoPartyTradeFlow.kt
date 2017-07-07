@@ -142,7 +142,12 @@ object TwoPartyTradeFlow {
             // Send the signed transaction to the seller, who must then sign it themselves and commit
             // it to the ledger by sending it to the notary.
             progressTracker.currentStep = COLLECTING_SIGNATURES
-            val twiceSignedTx = subFlow(CollectSignaturesFlow(partSignedTx, COLLECTING_SIGNATURES.childProgressTracker()))
+            // TODO: Use actual anonymised identities, not fake ones derived from the well known identity
+            val fullOtherParty = serviceHub.identityService.certificateFromParty(otherParty)!!
+            val myAnonymisedIdentity = AnonymisedIdentity(serviceHub.myInfo.legalIdentityAndCert.certPath, serviceHub.myInfo.legalIdentityAndCert.certificate, serviceHub.myInfo.legalIdentity.owningKey)
+            val theirAnonymisedIdentity = AnonymisedIdentity(fullOtherParty.certPath, fullOtherParty.certificate, fullOtherParty.owningKey)
+            val identities: Map<Party, AnonymisedIdentity> = listOf(Pair(serviceHub.myInfo.legalIdentity, myAnonymisedIdentity), Pair(otherParty, theirAnonymisedIdentity)).toMap()
+            val twiceSignedTx = subFlow(CollectSignaturesFlow(partSignedTx, identities, COLLECTING_SIGNATURES.childProgressTracker()))
 
             // Notarise and record the transaction.
             progressTracker.currentStep = RECORDING
