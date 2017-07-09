@@ -6,7 +6,6 @@ import com.zaxxer.hikari.HikariDataSource
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.parsePublicKeyBase58
 import net.corda.core.crypto.toBase58String
-import net.corda.core.identity.PartyAndCertificate
 import net.corda.node.utilities.StrandLocalTransactionManager.Boundary
 import org.bouncycastle.cert.X509CertificateHolder
 import org.h2.jdbc.JdbcBlob
@@ -23,7 +22,6 @@ import java.io.Closeable
 import java.security.PublicKey
 import java.security.cert.CertPath
 import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
 import java.sql.Connection
 import java.time.Instant
 import java.time.LocalDate
@@ -45,6 +43,7 @@ fun <T> databaseTransaction(db: Database, statement: Transaction.() -> T) = db.t
 fun <T> Database.transaction(statement: Transaction.() -> T): T {
     // We need to set the database for the current [Thread] or [Fiber] here as some tests share threads across databases.
     StrandLocalTransactionManager.database = this
+
     println("thread=${Thread.currentThread().id} db change to $this")
     return org.jetbrains.exposed.sql.transactions.transaction(Connection.TRANSACTION_REPEATABLE_READ, 1, statement)
 }
@@ -59,7 +58,7 @@ fun Database.createTransaction(): Transaction {
 fun configureDatabase(props: Properties): Pair<Closeable, Database> {
     val config = HikariConfig(props)
     val dataSource = HikariDataSource(config)
-    val database = Database.connect(dataSource) { db -> StrandLocalTransactionManager(db, TransactionTracker(dataSource)) }
+    val database = Database.connect(dataSource) { db -> StrandLocalTransactionManager(db, CordaTransactionManager(dataSource)) }
     // Check not in read-only mode.
     database.transaction {
         check(!database.metadata.isReadOnly) { "Database should not be readonly." }
@@ -69,12 +68,12 @@ fun configureDatabase(props: Properties): Pair<Closeable, Database> {
 
 fun <T> Database.isolatedTransaction(block: Transaction.() -> T): T {
     val oldContext = StrandLocalTransactionManager.setThreadLocalTx(null)
-    val old2 = TransactionTracker.setThreadLocalTx(null)
+    val old2 = CordaTransactionManager.setThreadLocalTx(null)
     return try {
         transaction(block)
     } finally {
         StrandLocalTransactionManager.restoreThreadLocalTx(oldContext)
-        TransactionTracker.restoreThreadLocalTx(old2)
+        CordaTransactionManager.restoreThreadLocalTx(old2)
     }
 }
 
@@ -92,7 +91,7 @@ fun <T> Database.isolatedTransaction(block: Transaction.() -> T): T {
  * facilitates the use of [Observable.afterDatabaseCommit] to create event streams that only emit once the database
  * transaction is closed and the data has been persisted and becomes visible to other observers.
  */
-class StrandLocalTransactionManager(initWithDatabase: Database, initTransactionTracker : TransactionTracker) : TransactionManager {
+class StrandLocalTransactionManager(initWithDatabase: Database, initCordaTransactionManager: CordaTransactionManager) : TransactionManager {
 
     companion object {
         private val TX_ID = Key<UUID>()
@@ -143,10 +142,10 @@ class StrandLocalTransactionManager(initWithDatabase: Database, initTransactionT
         databaseToInstance[database] = this
     }
 
-    val transactionTracker: TransactionTracker = initTransactionTracker
+    val cordaTransactionManager: CordaTransactionManager = initCordaTransactionManager
 
     override fun newTransaction(isolation: Int): Transaction {
-        var cordaTransaction = transactionTracker.newTransaction(isolation)
+        var cordaTransaction = cordaTransactionManager.newTransaction(isolation)
         val impl = StrandLocalTransaction(database, isolation, threadLocalTx, transactionBoundaries, cordaTransaction)
         return Transaction(impl).apply {
             threadLocalTx.set(this)
