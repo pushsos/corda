@@ -224,7 +224,7 @@ sealed class PortAllocation {
  *     (...)
  *   }
  *
- * Note that [DriverDSL.startNode] does not wait for the node to start up synchronously, but rather returns a [Future]
+ * Note that [DriverDSL.startNode] does not wait for the node to start up synchronously, but rather returns a [CordaFuture]
  * of the [NodeInfo] that may be waited on, which completes when the new node registered with the network map service.
  *
  * The driver implicitly bootstraps a [NetworkMapService].
