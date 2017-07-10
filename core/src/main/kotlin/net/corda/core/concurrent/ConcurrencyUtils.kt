@@ -27,7 +27,9 @@ internal fun <S, T> firstOf(futures: Array<out CordaFuture<S>>, log: Logger, han
         it.then {
             if (winnerChosen.compareAndSet(false, true)) {
                 resultFuture.catch { handler(it) }
-            } else if (!it.isCancelled) {
+            } else if (it.isCancelled) {
+                // Do nothing.
+            } else {
                 it.match({}, { log.error(shortCircuitedTaskFailedMessage, it) })
             }
         }

@@ -46,19 +46,20 @@ interface CordaFuture<out V> {
     }
 }
 
-interface OpenFuture<V> : CordaFuture<V> {
+interface ValueOrException<in V> {
     fun set(value: V): Boolean
     fun setException(t: Throwable): Boolean
     /** Executes the given block and sets the future to either the result, or any exception that was thrown. */
-    fun catch(block: () -> V) {
-        set(try {
+    fun catch(block: () -> V): Boolean {
+        return set(try {
             block()
         } catch (t: Throwable) {
-            setException(t)
-            return
+            return setException(t)
         })
     }
 }
+
+interface OpenFuture<V> : ValueOrException<V>, CordaFuture<V>
 
 private class CordaFutureImpl<V>(private val impl: CompletableFuture<V> = CompletableFuture()) : OpenFuture<V> {
     override fun cancel(mayInterruptIfRunning: Boolean) = impl.cancel(mayInterruptIfRunning)
