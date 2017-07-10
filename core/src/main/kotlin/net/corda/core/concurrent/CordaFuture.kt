@@ -72,7 +72,7 @@ private class CordaFutureImpl<V>(private val impl: CompletableFuture<V> = Comple
     override fun set(value: V) = impl.complete(value)
     override fun setException(t: Throwable) = impl.completeExceptionally(t)
     override fun <W> then(block: (CordaFuture<V>) -> W) {
-        impl.thenRun { block(this) }
+        impl.whenComplete { _, _ -> block(this) }
     }
 }
 
