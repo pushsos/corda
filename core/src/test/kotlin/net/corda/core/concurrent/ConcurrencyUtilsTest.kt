@@ -46,20 +46,23 @@ class ConcurrencyUtilsTest {
         assertTrue(f2.isCancelled)
     }
 
+    /**
+     * Note that if you set CancellationException on CompletableFuture it will report isCancelled.
+     */
     @Test
     fun `firstOf re-entrant handler attempt not due to cancel`() {
         val futures = arrayOf(f1, f2)
-        val fakeCancel = CancellationException()
+        val nonCancel = IllegalStateException()
         val g = firstOf(futures, log) {
             ++invocations
-            futures.forEach { it.setException(fakeCancel) } // One handler attempt here.
+            futures.forEach { it.setException(nonCancel) } // One handler attempt here.
             it.getOrThrow()
         }
         f1.set(100)
         assertEquals(100, g.getOrThrow())
         assertEquals(1, invocations) // Handler didn't run as g was already done.
-        verify(log).error(eq(shortCircuitedTaskFailedMessage), same(fakeCancel))
-        assertThatThrownBy { f2.getOrThrow() }.isSameAs(fakeCancel)
+        verify(log).error(eq(shortCircuitedTaskFailedMessage), same(nonCancel))
+        assertThatThrownBy { f2.getOrThrow() }.isSameAs(nonCancel)
     }
 
     @Test
