@@ -116,15 +116,7 @@ class CompositeKey private constructor(val threshold: Int, children: List<NodeAn
 
         override fun compareTo(other: NodeAndWeight): Int {
             if (weight == other.weight) {
-                val byteArray = node.toSHA256Bytes()
-                val otherByteArray = other.node.toSHA256Bytes()
-                byteArray.zip(otherByteArray).forEach {
-                    val result = it.first.compareTo(it.second)
-                    if (result != 0) {
-                        return result
-                    }
-                }
-                return byteArray.size - otherByteArray.size
+                return node.hashCode().compareTo(other.node.hashCode())
             } else return weight.compareTo(other.weight)
         }
 
