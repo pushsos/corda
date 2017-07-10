@@ -213,7 +213,7 @@ interface VaultService {
     fun notify(tx: WireTransaction) = notifyAll(listOf(tx))
 
     /**
-     * Provide a [Future] for when a [StateRef] is consumed, which can be very useful in building tests.
+     * Provide a [CordaFuture] for when a [StateRef] is consumed, which can be very useful in building tests.
      */
     fun whenConsumed(ref: StateRef): CordaFuture<Vault.Update> {
         return updates.filter { it.consumed.any { it.ref == ref } }.toFuture()
