@@ -1,10 +1,9 @@
 package net.corda.node.utilities
 
 import co.paralleluniverse.fibers.Suspendable
+import co.paralleluniverse.strands.SettableFuture
 import com.google.common.util.concurrent.ListenableFuture
 import net.corda.core.concurrent.CordaFuture
-import net.corda.core.concurrent.openFuture
-import net.corda.core.seconds
 import rx.Observable
 import rx.Subscriber
 import rx.subscriptions.Subscriptions
@@ -70,7 +69,7 @@ abstract class MutableClock : Clock() {
  */
 @Suspendable
 fun Clock.awaitWithDeadline(deadline: Instant, future: Future<*> = GuavaSettableFuture.create<Any>()): Boolean {
-    var timeout: Duration
+    var nanos: Long
     do {
         val originalFutureCompleted = makeStrandFriendlySettableFuture(future)
         val subscription = if (this is MutableClock) {
@@ -80,11 +79,11 @@ fun Clock.awaitWithDeadline(deadline: Instant, future: Future<*> = GuavaSettable
         } else {
             null
         }
-        timeout = Duration.between(this.instant(), deadline)
-        if (timeout > 0.seconds) {
+        nanos = Duration.between(this.instant(), deadline).toNanos()
+        if (nanos > 0) {
             try {
                 // This will return when it times out, or when the clock mutates or when when the original future completes.
-                originalFutureCompleted.get(timeout)
+                originalFutureCompleted.get(nanos, TimeUnit.NANOSECONDS)
             } catch(e: ExecutionException) {
                 // No need to take action as will fall out of the loop due to future.isDone
             } catch(e: CancellationException) {
@@ -95,18 +94,18 @@ fun Clock.awaitWithDeadline(deadline: Instant, future: Future<*> = GuavaSettable
         }
         subscription?.unsubscribe()
         originalFutureCompleted.cancel(false)
-    } while (timeout > 0.seconds && !future.isDone)
+    } while (nanos > 0 && !future.isDone)
     return future.isDone
 }
 
 /**
- * Convert a [CordaFuture] or JDK8 [CompletableFuture] to Quasar implementation and set to true when a result
+ * Convert a [CordaFuture], Guava [ListenableFuture] or JDK8 [CompletableFuture] to Quasar implementation and set to true when a result
  * or [Throwable] is available in the original.
  *
  * We need this so that we do not block the actual thread when calling get(), but instead allow a Quasar context
  * switch.  There's no need to checkpoint our Fibers as there's no external effect of waiting.
  */
-private fun <T : Any> makeStrandFriendlySettableFuture(future: Future<T>) = openFuture<Boolean>().also { g ->
+private fun <T : Any> makeStrandFriendlySettableFuture(future: Future<T>) = SettableFuture<Boolean>().also { g ->
     when (future) {
         is CordaFuture<*> -> future.then { g.set(true) }
         is ListenableFuture -> future.addListener(Runnable { g.set(true) }, Executor { it.run() })
