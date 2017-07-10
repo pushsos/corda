@@ -1776,17 +1776,17 @@ class VaultQueryTests {
                 updates
             }
 
-        updates?.expectEvents {
+        updates.expectEvents {
             sequence(
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 0) {}
-                        require(produced.size == 5) {}
+                        require(flowId == null)
+                        require(consumed.isEmpty())
+                        require(produced.size == 5)
                     },
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 0) {}
-                        require(produced.size == 1) {}
+                        require(flowId == null)
+                        require(consumed.isEmpty())
+                        require(produced.size == 1)
                     }
             )
         }
@@ -1823,17 +1823,17 @@ class VaultQueryTests {
                 updates
             }
 
-        updates?.expectEvents {
+        updates.expectEvents {
             sequence(
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 1) {}
-                        require(produced.size == 0) {}
+                        require(flowId == null)
+                        require(consumed.size == 1)
+                        require(produced.isEmpty())
                     },
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 5) {}
-                        require(produced.size == 0) {}
+                        require(flowId == null)
+                        require(consumed.size == 5)
+                        require(produced.isEmpty())
                     }
             )
         }
@@ -1870,27 +1870,27 @@ class VaultQueryTests {
                 updates
             }
 
-        updates?.expectEvents {
+        updates.expectEvents {
             sequence(
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 0) {}
-                        require(produced.size == 5) {}
+                        require(flowId == null)
+                        require(consumed.isEmpty())
+                        require(produced.size == 5)
                     },
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 0) {}
-                        require(produced.size == 1) {}
+                        require(flowId == null)
+                        require(consumed.isEmpty())
+                        require(produced.size == 1)
                     },
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 1) {}
-                        require(produced.size == 1) {}
+                        require(flowId == null)
+                        require(consumed.size == 1)
+                        require(produced.size == 1)
                     },
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 5) {}
-                        require(produced.size == 0) {}
+                        require(flowId == null)
+                        require(consumed.size == 5)
+                        require(produced.isEmpty())
                     }
             )
         }
@@ -1909,7 +1909,6 @@ class VaultQueryTests {
                 val (snapshot, updates)  = vaultQuerySvc.trackBy<LinearState>()
                 // DOCEND VaultQueryExample16
 
-
                 assertThat(snapshot.states).hasSize(13)
                 assertThat(snapshot.statesMetadata).hasSize(13)
 
@@ -1926,22 +1925,22 @@ class VaultQueryTests {
                 updates
             }
 
-        updates?.expectEvents {
+        updates.expectEvents {
             sequence(
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 0) {}
-                        require(produced.size == 10) {}
+                        require(flowId == null)
+                        require(consumed.isEmpty())
+                        require(produced.size == 10)
                     },
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 0) {}
-                        require(produced.size == 3) {}
+                        require(flowId == null)
+                        require(consumed.isEmpty())
+                        require(produced.size == 3)
                     },
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 0) {}
-                        require(produced.size == 1) {}
+                        require(flowId == null)
+                        require(consumed.isEmpty())
+                        require(produced.size == 1)
                     }
             )
         }
@@ -1976,17 +1975,17 @@ class VaultQueryTests {
                 updates
             }
 
-        updates?.expectEvents {
+        updates.expectEvents {
             sequence(
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 0) {}
-                        require(produced.size == 3) {}
+                        require(flowId == null)
+                        require(consumed.isEmpty())
+                        require(produced.size == 3)
                     },
                     expect { (consumed, produced, flowId) ->
-                        require(flowId == null) {}
-                        require(consumed.size == 0) {}
-                        require(produced.size == 1) {}
+                        require(flowId == null)
+                        require(consumed.isEmpty())
+                        require(produced.size == 1)
                     }
             )
         }
