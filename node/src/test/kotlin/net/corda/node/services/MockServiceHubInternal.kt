@@ -15,12 +15,14 @@ import net.corda.node.services.schema.NodeSchemaService
 import net.corda.node.services.statemachine.FlowStateMachineImpl
 import net.corda.node.services.statemachine.StateMachineManager
 import net.corda.node.services.transactions.InMemoryTransactionVerifierService
+import net.corda.node.utilities.createSession
 import net.corda.testing.MOCK_IDENTITY_SERVICE
 import net.corda.testing.node.MockAttachmentStorage
 import net.corda.testing.node.MockNetworkMapCache
 import net.corda.testing.node.MockStateMachineRecordedTransactionMappingStorage
 import net.corda.testing.node.MockTransactionStorage
 import org.jetbrains.exposed.sql.Database
+import java.sql.Connection
 import java.time.Clock
 
 open class MockServiceHubInternal(
@@ -77,4 +79,6 @@ open class MockServiceHubInternal(
     }
 
     override fun getFlowFactory(initiatingFlowClass: Class<out FlowLogic<*>>): InitiatedFlowFactory<*>? = null
+
+    override fun jdbcSession(): Connection = database.createSession()
 }

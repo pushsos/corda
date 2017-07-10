@@ -8,6 +8,7 @@ import net.corda.testing.contracts.fillWithSomeTestCash
 import net.corda.testing.contracts.fillWithSomeTestDeals
 import net.corda.testing.contracts.fillWithSomeTestLinearStates
 import net.corda.core.contracts.*
+import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.toBase58String
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.VaultService
@@ -27,6 +28,7 @@ import net.corda.node.services.vault.NodeVaultService
 import net.corda.node.services.vault.schemas.jpa.CommonSchemaV1
 import net.corda.node.services.vault.schemas.jpa.VaultSchemaV1
 import net.corda.node.utilities.configureDatabase
+import net.corda.node.utilities.createSession
 import net.corda.node.utilities.transaction
 import net.corda.schemas.CashSchemaV1
 import net.corda.schemas.SampleCashSchemaV2
@@ -41,9 +43,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.hibernate.SessionFactory
 import org.jetbrains.exposed.sql.Database
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.io.Closeable
+import java.sql.Connection
 import java.time.Instant
 import java.util.*
 import javax.persistence.EntityManager
@@ -93,6 +97,8 @@ class HibernateConfigurationTest {
                     // Refactored to use notifyAll() as we have no other unit test for that method with multiple transactions.
                     vaultService.notifyAll(txs.map { it.tx })
                 }
+
+                override fun jdbcSession(): Connection = database.createSession()
             }
         }
         setUpDb()
@@ -801,4 +807,25 @@ class HibernateConfigurationTest {
         assertThat(queryResults).hasSize(6)
     }
 
+    /**
+     *  Test invoking SQL query using JDBC connection (session)
+     */
+    @Test
+    fun `test calling an arbitrary JDBC native query`() {
+        val nativeQuery = "SELECT v.transaction_id, v.output_index FROM vault_states v WHERE v.state_status = 0"
+
+        database.transaction {
+
+            val jdbcSession = database.createSession()
+            val prepStatement = jdbcSession.prepareStatement(nativeQuery)
+            val rs = prepStatement.executeQuery()
+            var count = 0
+            while (rs.next()) {
+                val stateRef = StateRef(SecureHash.parse(rs.getString(1)), rs.getInt(2))
+                Assert.assertTrue(cashStates.map { it.ref }.contains(stateRef))
+                count++
+            }
+            Assert.assertEquals(cashStates.count(), count)
+        }
+    }
 }

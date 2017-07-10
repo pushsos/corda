@@ -223,7 +223,7 @@ fun ServiceHub.evolveLinearStates(linearStates: List<StateAndRef<LinearState>>) 
 fun ServiceHub.evolveLinearState(linearState: StateAndRef<LinearState>) : StateAndRef<LinearState> = consumeAndProduce(linearState)
 
 @JvmOverloads
-fun ServiceHub.consumeCash(amount: Amount<Currency>, to: Party = CHARLIE) {
+fun ServiceHub.consumeCash(amount: Amount<Currency>, to: Party = CHARLIE): List<StateRef> {
     // A tx that spends our money.
     val spendTX = TransactionType.General.Builder(DUMMY_NOTARY).apply {
         vaultService.generateSpend(this, amount, to)
@@ -231,4 +231,6 @@ fun ServiceHub.consumeCash(amount: Amount<Currency>, to: Party = CHARLIE) {
     }.toSignedTransaction(checkSufficientSignatures = false)
 
     recordTransactions(spendTX)
+    // return spent state refs
+    return spendTX.tx.inputs
 }

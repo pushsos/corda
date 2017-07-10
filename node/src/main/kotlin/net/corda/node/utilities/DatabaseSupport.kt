@@ -54,6 +54,13 @@ fun Database.createTransaction(): Transaction {
     return TransactionManager.currentOrNew(Connection.TRANSACTION_REPEATABLE_READ)
 }
 
+fun Database.createSession(): Connection {
+    // We need to set the database for the current [Thread] or [Fiber] here as some tests share threads across databases.
+    StrandLocalTransactionManager.database = this
+    val ctx = TransactionManager.manager.currentOrNull()
+    return ctx?.connection ?: throw IllegalStateException("Was expecting to find database transaction: must wrap calling code within a transaction.")
+}
+
 fun configureDatabase(props: Properties): Pair<Closeable, Database> {
     val config = HikariConfig(props)
     val dataSource = HikariDataSource(config)

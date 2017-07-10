@@ -60,6 +60,7 @@ import net.corda.node.services.vault.VaultSoftLockManager
 import net.corda.node.utilities.AddOrRemove.ADD
 import net.corda.node.utilities.AffinityExecutor
 import net.corda.node.utilities.configureDatabase
+import net.corda.node.utilities.createSession
 import net.corda.node.utilities.transaction
 import org.apache.activemq.artemis.utils.ReusableLatch
 import org.bouncycastle.asn1.x500.X500Name
@@ -78,6 +79,7 @@ import java.security.KeyPair
 import java.security.KeyStore
 import java.security.KeyStoreException
 import java.security.cert.*
+import java.sql.Connection
 import java.time.Clock
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -832,6 +834,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
                 super.recordTransactions(txs)
             }
         }
+        override fun jdbcSession(): Connection = database.createSession()
     }
 
 }
